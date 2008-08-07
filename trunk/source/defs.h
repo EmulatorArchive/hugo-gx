@@ -57,7 +57,7 @@ typedef struct mode {
 
 typedef struct op {
    int (*func_exe)(void);
-   Int16  addr_mode;
+   UInt16  addr_mode;
    Char * opname;
 //   short int filler[3];   // force align to power-of-2 (?)
 } operation;

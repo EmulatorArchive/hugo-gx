@@ -17,6 +17,8 @@ int loadgame();
 int savegame();
 /* Save the progression */
 
+long file_size (char* file_name);
+
 #define  MAX_FREEZED_VALUE   8
 
 typedef struct {
