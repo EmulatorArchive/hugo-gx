@@ -18,7 +18,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include <malloc.h>
 
 #if defined(HAVE_LIMITS_H)
 #include <limits.h>
@@ -86,10 +85,10 @@ void gtk_menu_ensure_uline_accel_group ()
 #endif
 
 
-#ifndef NGC
 #ifndef BENCHMARK
 static double osd_getTime(void)
 {
+#ifndef NGC
 #ifdef WIN32
   return (SDL_GetTicks() * 1e-3);
 #elif defined(DJGPP)
@@ -100,6 +99,7 @@ static double osd_getTime(void)
   gettimeofday(&tp, NULL);
   // printf("current microsec = %f\n",tp.tv_sec + 1e-6 * tp.tv_usec);
   return tp.tv_sec + 1e-6 * tp.tv_usec;
+#endif
 #endif
 }
 #endif /* !BENCHMARK */
@@ -130,20 +130,13 @@ static void osd_sleep(double s)
   }
 }
 #endif /* !BENCHMARK */
-#endif /* !NGC */
 
 
 void
 wait_next_vsync()
 {
-#ifdef NGC
-  extern int frameticker;
-  /* Wait for next VB  */
-  while (!frameticker) usleep(10);
-  frameticker--;
-#else
 #ifndef BENCHMARK
-  static double lasttime = 0, lastcurtime = 0;
+  static double lasttime = 0, lastcurtime = 0, frametime = 0.1;
   double curtime;
   const double deltatime = (1.0 / 60.0);
 
@@ -158,7 +151,6 @@ wait_next_vsync()
 
   if ((lasttime + deltatime) < curtime)
     lasttime = curtime;
-#endif
 #endif
 }
 
@@ -609,12 +601,13 @@ wipe_directory(char* directory_name)
  * @param name_to_check Name of the file to check for existence
  * @return 0 if the file doesn't exist, else non null value
  */
-int file_exists(char* name_to_check)
+int
+file_exists(char* name_to_check)
 {
 #ifndef NGC
   struct stat stat_buffer;
   return !stat(name_to_check, &stat_buffer);
 #else
-  return 0;
+  return NULL;
 #endif
 }

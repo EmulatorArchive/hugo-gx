@@ -72,8 +72,6 @@ void stop_dump_video();
 
 void dump_video_frame();
 
-void SetPalette(void);
-
 UChar Loop6502();
 
 #if defined(GFX_DEBUG)

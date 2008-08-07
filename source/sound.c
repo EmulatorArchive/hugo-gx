@@ -474,7 +474,7 @@ void write_adpcm(void)
     AdpcmFilledBuf = io.adpcm_psize;
 
   AdpcmUsedNibbles =
-    WriteBufferAdpcm8 ((UChar *)adpcmbuf,
+    WriteBufferAdpcm8 (adpcmbuf,
 		       io.adpcm_pptr, AdpcmFilledBuf, &index, &previousValue);
 
   io.adpcm_pptr += AdpcmUsedNibbles;

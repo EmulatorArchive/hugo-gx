@@ -1,5 +1,14 @@
 #include "hugo.h"
 
+#ifdef NGC
+extern void InitGCVideo();
+extern void ResetSound();
+extern void pourlogo();
+extern void unpack();
+extern void MainMenu ();
+int hugoromsize;
+unsigned char *hugorom;
+#endif
 //! name of the backup ram filename
 static char backup_mem[PATH_MAX];
 
@@ -106,7 +115,6 @@ cleanup ()
 
 }
 
-#ifndef NGC
 //! Check if a game was asked
 /*!
  * \return non zero if a game must be played
@@ -116,7 +124,6 @@ game_asked ()
 {
   return ((CD_emulation == 1) || (strcmp (cart_name, "")));
 }
-#endif
 
 //! Run an instance of a rom or cd or iso
 /*!
@@ -125,7 +132,11 @@ game_asked ()
 int
 play_game (void)
 {
+
+#ifdef NGC
   cart_reload = 0;
+  ResetSound();
+#endif
 
   // Initialise the target machine (pce)
   if (InitPCE (cart_name, backup_mem) != 0)
@@ -170,47 +181,55 @@ play_game (void)
   return cart_reload;
 }
 
-#ifdef NGC
-extern void MainMenu ();
-#endif
-
 int
 main (int argc, char *argv[])
 {
   int error = 0;
 
+#ifdef NGC
+  InitGCVideo();
+  unpack();
+  pourlogo();
+  
+  /*** Allocate cart_rom here ***/
+  hugorom = malloc(2621440 + 32);
+  if ((unsigned int)hugorom & 0x1f) hugorom += 32 - ( (unsigned int)hugorom & 0x1f );
+  memset(hugorom, 0, 2621440);
+  hugoromsize = 0;
+#endif
+
   error = initialisation (argc, argv);
 
+  while ( hugoromsize == 0 ) MainMenu();
+  cart_reload = 0;
+
 #if defined(GTK)
+
   if (!error)
-  {
-    if (game_asked ())
     {
-      while (play_game ());
+      if (game_asked ())
+	{
+	  while (play_game ());
+	}
+      else
+	{
+	  build_gtk_interface (argc, argv);
+	}
     }
-    else
-    {
-      build_gtk_interface (argc, argv);
-    }
-  }
-#elif defined(NGC)
-  if (!error)
-  {
-    MainMenu();
-    while (play_game ());
-  }
+
 #else // not defined(GTK)
+
   if (!error)
-  {
-    if (game_asked () == 0 )
     {
-      while (play_game ());
+      if (game_asked () == 0 )
+	{
+	  while (play_game ());
+	}
+      else
+	{
+	  printf ("No game specified\n");
+	}
     }
-    else
-    {
-      printf ("No game specified\n");
-    }
-  }
 #endif
 
   cleanup ();

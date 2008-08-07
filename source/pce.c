@@ -36,7 +36,7 @@
 #ifdef NGC
 #include "osd_ngc_mix.h"
 #include "zlib.h"
-char cdsystem_path[255] = "/hugo/syscard.pce";
+char cdsystem_path[255];
 extern unsigned char *hugorom;
 extern int hugoromsize;
 unsigned long ROMCRC32;
@@ -396,14 +396,14 @@ read_sector_dummy,
     read_sector_CD,
     read_sector_ISO, read_sector_ISQ, read_sector_BIN, read_sector_HCD};
 
-#ifndef NGC
-static char *check_char (char *s, char c)
+static char *
+check_char (char *s, char c)
 {
   while ((*s) && (*s != c))
     s++;
   return *s == c ? s : NULL;
 }
-#endif
+
 
 //#if defined(ALLEGRO)
 void interrupt_60hz (void)
@@ -711,7 +711,7 @@ read_sector_BIN (unsigned char *p, UInt32 sector)
     }
 
 #ifndef FINAL_RELEASE
-  fprintf (stderr, "Loading sector n?%d.\n", pce_cd_sectoraddy);
+  fprintf (stderr, "Loading sector n�%d.\n", pce_cd_sectoraddy);
 #endif
 
   fseek (iso_FILE,
@@ -759,7 +759,7 @@ read_sector_ISQ (unsigned char *p, UInt32 sector)
     }
 
 #ifndef FINAL_RELEASE
-  fprintf (stderr, "Loading sector n?%d.\n", pce_cd_sectoraddy);
+  fprintf (stderr, "Loading sector n�%d.\n", pce_cd_sectoraddy);
 #endif
 
   dummy = (sector - CD_track[binbcd[result]].beg_lsn) * 2048;
@@ -845,14 +845,14 @@ read_sector_ISO (unsigned char *p, UInt32 sector)
     }
 
 #ifndef FINAL_RELEASE
-  fprintf (stderr, "Loading sector n?%d.\n", pce_cd_sectoraddy);
+  fprintf (stderr, "Loading sector n�%d.\n", pce_cd_sectoraddy);
   Log
-    ("Loading sector n?%d.\nAX=%02x%02x\nBX=%02x%02x\nCX=%02x%02x\nDX=%02x%02x\n\n",
+    ("Loading sector n�%d.\nAX=%02x%02x\nBX=%02x%02x\nCX=%02x%02x\nDX=%02x%02x\n\n",
      pce_cd_sectoraddy, RAM[0xf9], RAM[0xf8], RAM[0xfb], RAM[0xfa], RAM[0xfd],
      RAM[0xfc], RAM[0xff], RAM[0xfe]);
   Log("temp+2-5 = %x %x %x\ntemp + 1 = %02x\n",RAM[5], RAM[6], RAM[7], RAM[4]);
   Log ("ISO : seek at %d\n", (sector - CD_track[result].beg_lsn) * 2048);
-  Log ("Track n?%d begin at %d\n", result, CD_track[result].beg_lsn);
+  Log ("Track n�%d begin at %d\n", result, CD_track[result].beg_lsn);
 #endif
 
   if (result != 0x02)
@@ -1536,7 +1536,7 @@ IO_write (UInt16 A, UChar V)
 	  fprintf (stderr, "ignored PSG write\n");
 #endif
 	}
-#endif // NGC port
+#endif
       return;
 
     case 0x0c00:		/* timer */
@@ -1700,10 +1700,12 @@ IO_write (UInt16 A, UChar V)
       break;
 
     case 0x1800:		/* CD-ROM extention */
+#ifndef NGC
 #if defined(BSD_CD_HARDWARE_SUPPORT)
       pce_cd_handle_write_1800(A, V);
 #else
       gpl_pce_cd_handle_write_1800(A, V);
+#endif
 #endif
       break;
     }
@@ -2087,11 +2089,11 @@ search_syscard()
                  set true_file_name or builtin_system
 
 *****************************************************************************/
-#ifdef NGC
 SInt32 CartLoad( char *name )
 {
 
 	int header;
+	CD_emulation = 0;		/*** Doing ROM Only ***/
 
 	header = hugoromsize & 0x1fff;
 	ROM_size = hugoromsize & ~0x1fff;
@@ -2103,11 +2105,8 @@ SInt32 CartLoad( char *name )
 	return 0;
 }
 
-
-
-#else 
 SInt32
-CartLoad (char *name)
+CartLoadOld (char *name)
 {
   FILE *fp = NULL;
   int fsize;
@@ -2209,7 +2208,9 @@ CartLoad (char *name)
       char* filename_in_archive = NULL;
 
       Log("Testing archive %s\n", name);
+#ifndef NGC
       filename_in_archive = find_possible_filename_in_zip(name);
+#endif
       Log("Return value = (%p) %s\n", filename_in_archive, filename_in_archive);
       if (strcmp(filename_in_archive,""))
         {
@@ -2217,7 +2218,9 @@ CartLoad (char *name)
 	  size_t unzipped_rom_size = 0;
 	  
           Log("Found %s in %s\n", filename_in_archive, name);
+#ifndef NGC
           unzipped_rom = extract_file_in_memory(name, filename_in_archive, &unzipped_rom_size);
+#endif
 	  ROM_size = unzipped_rom_size / 0x2000;
 
 #if defined(SHARED_MEMORY)
@@ -2337,8 +2340,6 @@ CartLoad (char *name)
 
   return 0;
 }
-#endif // NGC port
-
 
 
 #ifndef KERNEL_DS
@@ -2730,6 +2731,7 @@ InitPCE (char *name, char *backmemname)
   int i = 0;
   unsigned long CRC = 0;
   int dummy;
+  char *tmp_dummy;
   char local_us_encoded_card = 0;
 
 #ifndef NGC
@@ -2741,8 +2743,8 @@ InitPCE (char *name, char *backmemname)
     return -1;
 
 #ifndef NGC
-  char *tmp_dummy;
-  osd_fix_filename_slashes(cart_name);
+	osd_fix_filename_slashes(cart_name);
+#endif
 
   if (!(tmp_dummy = (char *) (strrchr (cart_name, '/'))))
     tmp_dummy = &cart_name[0];
@@ -2769,6 +2771,7 @@ InitPCE (char *name, char *backmemname)
   else
     tmp_dummy++;
 
+
   memset (short_iso_name, 0, 80);
   i = 0;
   while ((tmp_dummy[i]) && (tmp_dummy[i] != '.')) {
@@ -2783,6 +2786,7 @@ InitPCE (char *name, char *backmemname)
         short_iso_name[strlen (short_iso_name)] = '.';
       }
 
+#ifndef NGC
 #ifdef WIN32
 
   switch (CD_emulation)
@@ -2831,7 +2835,7 @@ InitPCE (char *name, char *backmemname)
   }
 
 #endif
-#endif //NGC port (no autosave support)
+#endif
 
   // Set the base frequency
   BaseClock = 7800000;
@@ -3234,7 +3238,6 @@ TrashPCE (char *backmemname)
       fclose (fp);
       Log ("%s used for saving RAM\n", backmemname);
     }
-#endif
 
   // Set volume to zero
   io.psg_volume = 0;
@@ -3243,12 +3246,12 @@ TrashPCE (char *backmemname)
   sprintf (tmp_buf, "%s/HU-GO!.TMP/*.*", short_exe_name);
   for_each_file (tmp_buf, 32, delete_file_tmp, 0);
 #elif defined(LINUX)
-  sprintf (tmp_buf, "rm -rf %s/HU-GO!.TMP/*", short_exe_name);
-  system(tmp_buf);
+		sprintf (tmp_buf, "rm -rf %s/HU-GO!.TMP/*", short_exe_name);
+	    system(tmp_buf);
 #endif
+  sprintf (tmp_buf, "%s/HU-GO!.TMP", short_exe_name);
 
 #ifndef NGC
-  sprintf (tmp_buf, "%s/HU-GO!.TMP", short_exe_name);
   rmdir (tmp_buf);
 #endif
 
@@ -3287,6 +3290,10 @@ TrashPCE (char *backmemname)
 
   if (CD_emulation == 5)
     HCD_shutdown ();
+
+#else
+  memset(WRAM, 0, 0x2000);
+#endif
 
   if (IOAREA)
     free (IOAREA);
@@ -3431,10 +3438,10 @@ main (int argc, char *argv[])
 #else
   strcpy (tmp_path, "/etc/hugo.dat");
 #endif
-  printf (" ? Decrunching data file...");
+  printf (" � Decrunching data file...");
   if (!(datafile = load_datafile (tmp_path)))
     {
-      printf ("\n ? ERROR!!\n ? Datafile %s not found\n", tmp_path);
+      printf ("\n � ERROR!!\n � Datafile %s not found\n", tmp_path);
       exit (-1);
     }
 

@@ -7,7 +7,9 @@
 /**************************************************************************/
 #include "config.h"
 
+#ifndef NGC
 #include "iniconfig.h"
+#endif
 
 #include "utils.h"
 #include "hcd.h"
@@ -33,24 +35,38 @@ UChar HCD_current_played_track = 0;
 int
 fill_HCD_info (char *name)
 {
-#if defined(ALLEGRO) || defined(SDL_mixer) || defined(NGC)
+
+#if defined(ALLEGRO) || defined(SDL_mixer)
 
   int current_track;
+
+
+
   char *MP3_path, *ISO_path;
+
+
+
   char MP3_path_tmp[256], ISO_path_tmp[256], cw_dir[256];
 
 
+
   set_config_file (name);
+
+
   init_config();
   HCD_first_track = get_config_int ("main", "first_track", 1);
+
+
+
   HCD_last_track = get_config_int ("main", "last_track", 22);
+
+
+
   current_track = get_config_int ("main", "minimum_bios", -1);
+
+
+
   MP3_path = get_config_string ("main", "MP3_path", "");
-
-
-
-
-#endif
 
 
   if (!strcmp (MP3_path, ""))
@@ -735,8 +751,13 @@ fill_HCD_info (char *name)
 
 
 
+
+#endif
+
+#ifndef NGC
 //restores right file for hugo config
 set_config_file_back();
+#endif
 
   return 1;
 
@@ -810,8 +831,6 @@ HCD_play_track (UChar track, char repeat)
 	  Mix_PlayMusic(sdlmixmusic[track],repeat);
       MP3_playing = 1;
     }
-
-#elif defined (NGC)
 
 #endif
 
