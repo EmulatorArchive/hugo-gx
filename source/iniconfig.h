@@ -29,8 +29,11 @@
 
 #endif
 
+char init_config (void);
 void set_config_file (const char *filename);
 void set_config_file_back (void);
+int get_config_int (char *section, char *keyword, int default_value);
+char *get_config_string (char *section, char *keyword, char *default_value);
 
 void parse_INIfile();
 /* check the configuration file for options
@@ -41,8 +44,9 @@ void parse_commandline(int argc, char** argv);
 
 extern unsigned char joy_mapping[5][16];
 
+#ifdef CHRONO
 extern SInt32 smode,vmode;
-
+#endif
 extern char* bmdefault;
 
 extern char cdsystem_path[PATH_MAX];

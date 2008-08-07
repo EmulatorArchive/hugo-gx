@@ -507,8 +507,8 @@ IO_read_raw (UInt16 A)
 			io.joy_counter = (UChar)((io.joy_counter + 1) % 5);
 		}
 
-/* return ret | Country; *//* country 0:JPN 1<<6=US */
-		return ret | 0x30; // those 2 bits are always on, bit 6 = 0 (Jap), bit 7 = 0 (Attached cd)
+// those 2 bits are always on, bit 6 = 0 (Jap), bit 7 = 0 (Attached cd)
+		return ret | (Country << 6) | (CD_emulation ? 0x30 : 0xB0); 
 
 	case 0x1400:		/* IRQ */
 		switch (A & 15)
@@ -659,11 +659,8 @@ IO_read_raw (UInt16 A)
 #if defined(BSD_CD_HARDWARE_SUPPORT)
           return pce_cd_handle_read_1800(A);
 #else
-#ifndef NGC
           return gpl_pce_cd_handle_read_1800(A);
-#else
 	  break;
-#endif
 #endif
 	}
 #ifndef FINAL_RELEASE

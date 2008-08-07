@@ -128,7 +128,7 @@ unsigned int  audio_len=0;
 /* Callback for SDL Audio */
 void sdl_fill_audio(void *data, unsigned char *stream, int len)
 {
-#ifndef NGC
+#if defined(SDL)
   UChar lvol, rvol;
   int i;
   UChar center;
@@ -502,7 +502,7 @@ void WriteBuffer(char *buf, int ch, unsigned dwSize)
      */
     0, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 21, 24, 27, 31, 35, 39, 44, 50, 56, 64
   };
-  UInt16 lbal, rbal;
+  UInt16 lbal, rbal = 0;
   SChar sample;
 
   if (!(io.PSG[ch][PSG_DDA_REG] & PSG_DDA_ENABLE) || io.psg_channel_disabled[ch])
