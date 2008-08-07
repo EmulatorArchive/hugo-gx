@@ -73,7 +73,26 @@ int SD_ManageFile(char *filename, int direction)
 	
 	switch (direction)
   {
-		case 0: /* LOADING */
+		case 0: /* SAVING */
+
+      memcpy (&savebuffer[0], WRAM, 0x2000);
+			filesize = 0x2000;
+
+      /* write buffer */
+      done = fwrite(savebuffer, 1, filesize, fp);
+      if (done < filesize)
+      {
+        sprintf (filename, "Error writing %s", pathname);
+				WaitPrompt (filename);
+				return 0;
+			}
+
+      fclose(fp);
+      sprintf (filename, "Saved %d bytes successfully", done);
+			WaitPrompt (filename);
+			return 1;
+		
+		case 1: /* LOADING */
 		
       /* read size */
       fseek(fp , 0 , SEEK_END);
@@ -98,26 +117,6 @@ int SD_ManageFile(char *filename, int direction)
 			sprintf (filename, "Loaded %d bytes successfully", done);
 			WaitPrompt (filename);
 			return 1;
-
-		case 1: /* SAVING */
-
-      memcpy (&savebuffer[0], WRAM, 0x2000);
-			filesize = 0x2000;
-
-      /* write buffer */
-      done = fwrite(savebuffer, 1, filesize, fp);
-      if (done < filesize)
-      {
-        sprintf (filename, "Error writing %s", pathname);
-				WaitPrompt (filename);
-				return 0;
-			}
-
-      fclose(fp);
-      sprintf (filename, "Saved %d bytes successfully", done);
-			WaitPrompt (filename);
-			return 1;
-		
 	}
 	
 	return 0; 

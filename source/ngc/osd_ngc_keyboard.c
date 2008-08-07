@@ -23,10 +23,10 @@
 #define MAX_INPUTS 4
 
 /* configurable keys */
-#define KEY_BUTTON_II     0
-#define KEY_BUTTON_I      1   
-#define KEY_RUN           2
-#define KEY_SELECT        3
+#define KEY_BUTTON_I      0   
+#define KEY_BUTTON_II     1
+#define KEY_SELECT        2
+#define KEY_RUN           3
 #define KEY_AUTOFIRE_I    4
 #define KEY_AUTOFIRE_II   5
 #define KEY_MENU          6

@@ -811,8 +811,6 @@ HCD_play_track (UChar track, char repeat)
       MP3_playing = 1;
     }
 
-#elif defined (NGC)
-
 #endif
 
 };

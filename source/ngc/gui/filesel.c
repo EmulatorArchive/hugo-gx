@@ -80,7 +80,7 @@ static void ShowFiles (int offset, int selection)
  *
  * Update ROOT directory while browsing SDCARD
  ***************************************************************************/ 
-static int updateSDdirname()
+int updateSDdirname()
 {
   int size=0;
   char *test;
@@ -114,38 +114,11 @@ static int updateSDdirname()
 }
 
 /***************************************************************************
- * FileSortCallback (submitted by Marty Disibio)
- *
- * Quick sort callback to sort file entries with the following order:
- *   .
- *   ..
- *   <dirs>
- *   <files>
- ***************************************************************************/ 
-static int FileSortCallback(const void *f1, const void *f2)
-{
-	/* Special case for implicit directories */
-	if(((FILEENTRIES *)f1)->filename[0] == '.' || ((FILEENTRIES *)f2)->filename[0] == '.')
-	{
-		if(strcmp(((FILEENTRIES *)f1)->filename, ".") == 0) { return -1; }
-		if(strcmp(((FILEENTRIES *)f2)->filename, ".") == 0) { return 1; }
-		if(strcmp(((FILEENTRIES *)f1)->filename, "..") == 0) { return -1; }
-		if(strcmp(((FILEENTRIES *)f2)->filename, "..") == 0) { return 1; }
-	}
-	
-	/* If one is a file and one is a directory the directory is first. */
-	if(((FILEENTRIES *)f1)->flags == 1 && ((FILEENTRIES *)f2)->flags == 0) return -1;
-	if(((FILEENTRIES *)f1)->flags == 0 && ((FILEENTRIES *)f2)->flags == 1) return 1;
-	
-	return stricmp(((FILEENTRIES *)f1)->filename, ((FILEENTRIES *)f2)->filename);
-}
-
-/***************************************************************************
  * parseSDdirectory
  *
  * List files into one SDCARD directory
  ***************************************************************************/ 
-static int parseSDdirectory()
+int parseSDdirectory()
 {
   int nbfiles = 0;
   char filename[MAXPATHLEN];
@@ -173,10 +146,6 @@ static int parseSDdirectory()
   }
  
   dirclose(dir);
-
-  /* Sort the file list */
-  qsort(filelist, nbfiles, sizeof(FILEENTRIES), FileSortCallback);
-  
   return nbfiles;
 }
 
@@ -188,7 +157,7 @@ static int parseSDdirectory()
 extern void reloadrom ();
 extern short ogc_input__getMenuButtons(void);
 
-static void FileSelector()
+void FileSelector()
 {
 	short p;
 	int haverom = 0;
@@ -482,7 +451,7 @@ int OpenSD()
  *
  * The buffer parameter should re-use the initial ROM buffer.
  ****************************************************************************/ 
-static int LoadFile (unsigned char *buffer) 
+int LoadFile (unsigned char *buffer) 
 {
   int readoffset;
   int blocks;

@@ -283,9 +283,6 @@ void ogc_video__init(void)
   /* set GX rendering modes */
   tvmodes[0]->viTVMode = VI_TVMODE(vmode->viTVMode >> 2, VI_NON_INTERLACE);
   tvmodes[1]->viTVMode = VI_TVMODE(vmode->viTVMode >> 2, VI_INTERLACE);
-
-  /* set default rendering mode */
-  render = (vmode->viTVMode == VI_TVMODE_NTSC_PROG) ? 2 : 0;
    
   /* configure video mode */
   VIDEO_Configure (vmode);
