@@ -1,0 +1,17 @@
+HUGOGC HISTORY
+---------------
+
+24/03/2007 (eke-eke):
+
+- added SDCARD support to hugo 0.03 (including subdirectory browsing & LFN support)
+- simplified DVD access and DVD automount using libogc "DVD_Mount" function (removed low-level drivecodes & access routines)
+- use ASM GU functions used intead of 'C' ones for rendering speedup
+- memory card mounting "fix"
+- dynamically allocated rom location: this means you don't need a linked rom anymore and we can now provide binary release 
+
+
+Original Releases by Softdev:
+
+- hugoGC 0.3
+- hugoGC 0.2
+- hugoGC 0.1
