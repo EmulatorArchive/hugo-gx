@@ -17,14 +17,14 @@ include $(DEVKITPPC)/gamecube_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	hugo_cube
 BUILD		:=	build_cube
-SOURCES		:=	source source/ngc source/ngc/gui
-INCLUDES	:=	source source/ngc source/ngc/gui
+SOURCES		:=	source source/gui source/vfat
+INCLUDES	:=	source source/gui source/vfat
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS	= -g -O2 -Wall $(MACHDEP) $(INCLUDE) -DNGC="1" -DHW_DOL
+CFLAGS	= -g -O2 -Wall $(MACHDEP) $(INCLUDE) -DWORDS_BIGENDIAN -D_LZMA_IN_CB=1 -D_SZ_ONE_DIRECTORY=1 -D_SZ_NO_INT_64=0 -DNGC="1" -DHW_DOL
 CXXFLAGS	=	$(CFLAGS)
 
 LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
@@ -32,7 +32,7 @@ LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-lfat -logc -lm -lz
+LIBS	:=	-logc -lm -lz -lsdcard
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib

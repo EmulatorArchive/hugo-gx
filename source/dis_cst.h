@@ -4,7 +4,7 @@
 /* now define table contents: */
 
 typedef struct op {
-   unsigned int addr_mode;
+   int addr_mode;
    char * opname;
 } operation;
 

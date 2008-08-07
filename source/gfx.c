@@ -41,12 +41,12 @@ void SetPalette(void)
   rgb_map[255].g = 255;
 
   for (i = 0; i < 255; i++)
-  {
-    osd_gfx_set_color(i, (i & 0x1C) << 1, (i & 0xe0) >> 2, (i & 0x03) << 4);
-    rgb_map[i].r = (i & 0x1C) << 3;
-    rgb_map[i].g = (i & 0xe0);
-    rgb_map[i].b = (i & 0x03) << 6;
-  }
+    {
+      osd_gfx_set_color(i, (i & 0x1C) << 1, (i & 0xe0) >> 2, (i & 0x03) << 4);
+      rgb_map[i].r = (i & 0x1C) << 3;
+      rgb_map[i].g = (i & 0xe0);
+      rgb_map[i].b = (i & 0x03) << 6;
+    }
 #if defined(SDL)
 
   olay_cmap[255].r = (Uint8) ((0.299 * 0xff) + (0.587 * 0xff) + (0.114 * 0xff));
@@ -54,15 +54,15 @@ void SetPalette(void)
   olay_cmap[255].b = (Uint8) ((0xff - olay_cmap[i].r) * 0.713 + 128);
 
   for (i = 0; i < 255; i++)
-  {
-    int r,g,b;
-    r = (i & 0x1C) << 3;
-    g = (i & 0xe0);
-    b = (i & 0x03) << 6;
-    olay_cmap[i].r = (Uint8)((0.299 * r) + (0.587 * g) + (0.114 * b));
-    olay_cmap[i].g = (Uint8)((b - olay_cmap[i].r) * 0.565 + 128);
-    olay_cmap[i].b = (Uint8)((r - olay_cmap[i].r) * 0.713 + 128);
-  }
+    {
+      int r,g,b;
+      r = (i & 0x1C) << 3;
+      g = (i & 0xe0);
+      b = (i & 0x03) << 6;
+      olay_cmap[i].r = (Uint8)((0.299 * r) + (0.587 * g) + (0.114 * b));
+      olay_cmap[i].g = (Uint8)((b - olay_cmap[i].r) * 0.565 + 128);
+      olay_cmap[i].b = (Uint8)((r - olay_cmap[i].r) * 0.713 + 128);
+    }
 
 #endif
 }
@@ -592,13 +592,10 @@ Loop6502()
 
 int video_dump_flag = 0;
 
-#if defined(DUMP_UYVY_SINGLE_FILE)
-
-static FILE* video_output_file = NULL;
-
 //! Raw dump the current frame into the buffer, for video output purposes
 void dump_uyvy_frame(char* output_buffer)
 {
+#ifndef NGC
   int x,y;
   UChar* xbuf_pointer;
 
@@ -612,7 +609,83 @@ void dump_uyvy_frame(char* output_buffer)
         *(output_buffer++) = (char)olay_cmap[*xbuf_pointer].b;
         *(output_buffer++) = (char)olay_cmap[*(xbuf_pointer+1)].r;
       }
+#endif
 }
+
+
+//! Raw dump the current frame into the buffer, for video output purposes
+void dump_yyuv_frame(char* output_buffer)
+{
+#ifndef NGC
+  int x,y;
+  UChar* xbuf_pointer;
+
+  xbuf_pointer = osd_gfx_buffer;
+
+  for (y = 0; y < io.screen_h; y++, xbuf_pointer += XBUF_WIDTH - io.screen_w)
+    for (x = 0; x < io.screen_w - 1; x+=2, xbuf_pointer+=2)
+      {
+        *(output_buffer++) = (char)olay_cmap[*xbuf_pointer].r;
+        *(output_buffer++) = (char)olay_cmap[*(xbuf_pointer+1)].r;
+        *(output_buffer++) = (char)olay_cmap[*xbuf_pointer].g;
+        *(output_buffer++) = (char)olay_cmap[*xbuf_pointer].b;
+      }
+#endif
+}
+
+//! Raw dump the current frame into the buffer, for video output purposes
+void dump_rgb_frame(char* output_buffer)
+{
+  int x,y;
+  UChar* xbuf_pointer;
+
+  xbuf_pointer = osd_gfx_buffer;
+
+  for (y = 0; y < io.screen_h; y++, xbuf_pointer += XBUF_WIDTH - io.screen_w)
+    for (x = 0; x < io.screen_w; x++, xbuf_pointer++)
+      {
+        *(output_buffer++) = (char)rgb_map[*xbuf_pointer].r;
+        *(output_buffer++) = (char)rgb_map[*xbuf_pointer].g;
+        *(output_buffer++) = (char)rgb_map[*xbuf_pointer].b;
+      }
+}
+
+//! Raw dump the current frame into the buffer, for video output purposes
+void dump_raw_frame(char* output_buffer)
+{
+  int y;
+  UChar* xbuf_pointer;
+
+  xbuf_pointer = osd_gfx_buffer;
+
+  for (y = 0; y < (io.screen_h & 0xFFFE); y++, xbuf_pointer += XBUF_WIDTH, output_buffer += (io.screen_w & 0xFFFE))
+    memcpy(output_buffer, xbuf_pointer, (size_t)(io.screen_w & 0xFFFE));
+}
+
+
+//! Raw dump the current frame into the buffers, for video output purposes
+void dump_uyv_frame_separated(char* output_buffer_u, char* output_buffer_y, char* output_buffer_v)
+{
+#ifndef NGC
+  int x,y;
+  UChar* xbuf_pointer;
+
+  xbuf_pointer = osd_gfx_buffer;
+
+  for (y = 0; y < (io.screen_h & 0xFFFE); y++, xbuf_pointer += XBUF_WIDTH - io.screen_w)
+    for (x = 0; x < io.screen_w - 1; x+=2, xbuf_pointer+=2)
+      {
+        *(output_buffer_u++) = (char)olay_cmap[*xbuf_pointer].g;
+        *(output_buffer_y++) = (char)olay_cmap[*xbuf_pointer].r;
+        *(output_buffer_v++) = (char)olay_cmap[*xbuf_pointer].b;
+        *(output_buffer_y++) = (char)olay_cmap[*(xbuf_pointer+1)].r;
+      }
+#endif
+}
+
+#if defined(DUMP_UYVY_SINGLE_FILE)
+
+static FILE* video_output_file = NULL;
 
 //! Start the video dump process
 //! return 1 if video dumping began, else 0
@@ -675,24 +748,6 @@ void stop_dump_video()
 
 static char video_output_base_filename[PATH_MAX];
 static int video_output_frame_count;
-
-//! Raw dump the current frame into the buffers, for video output purposes
-void dump_uyv_frame_separated(char* output_buffer_u, char* output_buffer_y, char* output_buffer_v)
-{
-  int x,y;
-  UChar* xbuf_pointer;
-
-  xbuf_pointer = osd_gfx_buffer;
-
-  for (y = 0; y < (io.screen_h & 0xFFFE); y++, xbuf_pointer += XBUF_WIDTH - io.screen_w)
-    for (x = 0; x < io.screen_w - 1; x+=2, xbuf_pointer+=2)
-      {
-        *(output_buffer_u++) = (char)olay_cmap[*xbuf_pointer].g;
-        *(output_buffer_y++) = (char)olay_cmap[*xbuf_pointer].r;
-        *(output_buffer_v++) = (char)olay_cmap[*xbuf_pointer].b;
-        *(output_buffer_y++) = (char)olay_cmap[*(xbuf_pointer+1)].r;
-      }
-}
 
 //! Start the video dump process
 //! return 1 if video dumping began, else 0
@@ -794,24 +849,6 @@ void stop_dump_video()
 
 static FILE* video_output_file = NULL;
 
-//! Raw dump the current frame into the buffer, for video output purposes
-void dump_yyuv_frame(char* output_buffer)
-{
-  int x,y;
-  UChar* xbuf_pointer;
-
-  xbuf_pointer = osd_gfx_buffer;
-
-  for (y = 0; y < io.screen_h; y++, xbuf_pointer += XBUF_WIDTH - io.screen_w)
-    for (x = 0; x < io.screen_w - 1; x+=2, xbuf_pointer+=2)
-      {
-        *(output_buffer++) = (char)olay_cmap[*xbuf_pointer].r;
-        *(output_buffer++) = (char)olay_cmap[*(xbuf_pointer+1)].r;
-        *(output_buffer++) = (char)olay_cmap[*xbuf_pointer].g;
-        *(output_buffer++) = (char)olay_cmap[*xbuf_pointer].b;
-      }
-}
-
 //! Start the video dump process
 //! return 1 if video dumping began, else 0
 int start_dump_video()
@@ -873,23 +910,6 @@ void stop_dump_video()
 
 static char video_output_base_filename[PATH_MAX];
 static int video_output_frame_count;
-
-//! Raw dump the current frame into the buffer, for video output purposes
-void dump_rgb_frame(char* output_buffer)
-{
-  int x,y;
-  UChar* xbuf_pointer;
-
-  xbuf_pointer = osd_gfx_buffer;
-
-  for (y = 0; y < io.screen_h; y++, xbuf_pointer += XBUF_WIDTH - io.screen_w)
-    for (x = 0; x < io.screen_w; x++, xbuf_pointer++)
-      {
-        *(output_buffer++) = (char)rgb_map[*xbuf_pointer].r;
-        *(output_buffer++) = (char)rgb_map[*xbuf_pointer].g;
-        *(output_buffer++) = (char)rgb_map[*xbuf_pointer].b;
-      }
-}
 
 //! Start the video dump process
 //! return 1 if video dumping began, else 0
@@ -968,18 +988,6 @@ static unsigned int old_dump_crc = (unsigned)-1;
 static UInt16 old_screen_w, old_screen_h;
 
 static int video_frame_total, video_frame_skipped;
-
-//! Raw dump the current frame into the buffer, for video output purposes
-void dump_raw_frame(char* output_buffer)
-{
-  int y;
-  UChar* xbuf_pointer;
-
-  xbuf_pointer = osd_gfx_buffer;
-
-  for (y = 0; y < (io.screen_h & 0xFFFE); y++, xbuf_pointer += XBUF_WIDTH, output_buffer += (io.screen_w & 0xFFFE))
-    memcpy(output_buffer, xbuf_pointer, (size_t)(io.screen_w & 0xFFFE));
-}
 
 //! Start the video dump process
 //! return 1 if video dumping began, else 0

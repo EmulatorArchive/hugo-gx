@@ -256,7 +256,7 @@ searchbyte ()
             }
 	  else
 	{
-          UChar old_value = 0;
+          UChar old_value;
 
 	    {
 	      while (!(feof (O)))

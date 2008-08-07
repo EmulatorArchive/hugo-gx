@@ -15,8 +15,8 @@ include $(DEVKITPPC)/wii_rules
 # SOURCES is a list of directories containing source code
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
-TARGET		:=	hugo_wii
-BUILD		:=	build_wii
+TARGET		:=	hugo_wii_pal60
+BUILD		:=	build_wii_pal60
 SOURCES		:=	source source/gui source/vfat
 INCLUDES	:=	source source/gui source/vfat
 
@@ -24,7 +24,7 @@ INCLUDES	:=	source source/gui source/vfat
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS	= -g -O2 -Wall $(MACHDEP) $(INCLUDE) -DWORDS_BIGENDIAN -DNGC="1" -DHW_RVL
+CFLAGS	= -g -O2 -Wall $(MACHDEP) $(INCLUDE) -DWORDS_BIGENDIAN -DNGC="1" -DHW_RVL -DFORCE_EURGB60
 CXXFLAGS	=	$(CFLAGS)
 
 LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map

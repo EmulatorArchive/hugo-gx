@@ -1,32 +1,9 @@
 HUGOGC CHANGELOG:
 ---------------
 
-[NGC/WII]
-- fixed Load/Save WRAM options being inverted
-- fixed progressive mode (480p) automatic detection
-- added automatic alphabetical file sorting (thanks to Marty Disibio)
 
-14/06/2008:
------------
-[PCE]
-- sourcecode cleanup
-- fixed multiplayer support (max. 4 players)
-- added preliminary Super CD-ROM support: Data only (.ISO & .BIN image files), no CDDA track support
+Current:
 
-[NGC/WII]
-- fixed progressive mode support, now automatically detected
-
-[Wii only]
-- added automatic TV mode detection (from SYSCONF), no more PAL60 version needed
-- added option to return to Wii System Menu
-- fixed "TP reload" option: now compatible with HB channel
-- removed SD-Gekko support (Wii slot becomes default slot)
-- added Wii SD slot support for WRAM files
-- added Wiimote, Nunchuk & Classic controllers support through libwiiuse (see User Manual for default keys)
-
-
-19/04/2008:
-------------
 - added Wii mode support (including front SD rom loading with LFN, TP reload, ...)
 - added 4.7GB DVD support for chip-modded WII (GC mode only)
 - removed MPAL TV mode, added EURGB60 TV mode support: fix display problem for Wii users (GC&Wii mode)
@@ -45,7 +22,7 @@ HUGOGC CHANGELOG:
 
 
 24/03/2007 (eke-eke):
------------------------
+
 - added SDCARD support to hugo 0.03 (including subdirectory browsing & LFN support)
 - simplified DVD access and DVD automount using libogc "DVD_Mount" function (removed low-level drivecodes & access routines)
 - use ASM GU functions used intead of 'C' ones for rendering speedup

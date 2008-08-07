@@ -43,10 +43,10 @@
 
 #define MAX_INPUT 255
 
-#elif defined(NGC)
+#endif
 
+#ifdef NGC
 #define MAX_INPUT 255
-
 #endif
 
 #ifdef KERNEL_DS
@@ -199,9 +199,6 @@ extern UChar language;
 // the current language
 
 extern int BaseClock, UPeriod;
-
-extern int Country;
-// Country Protection (IO register flag, which games use this ?)
 
 extern UChar US_encoded_card;
 // Do we have to swap even and odd bytes in the rom

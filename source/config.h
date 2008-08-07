@@ -2,7 +2,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* modified bsd pce cd hardware support (old one) */
-#define BSD_CD_HARDWARE_SUPPORT 1
+//#define BSD_CD_HARDWARE_SUPPORT 0
 
 /* for hugo developers working on the cd subsystem */
 /* #undef CD_DEBUG */
@@ -221,6 +221,7 @@
 /* #undef WORDS_BIGENDIAN */
 #define WORDS_BIGENDIAN 1
 #define PATH_MAX 255
+#define NGC 1
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */

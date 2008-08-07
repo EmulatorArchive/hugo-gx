@@ -9769,7 +9769,7 @@ void pce_build_romlist(void)
 
   if (pce_romlist_size < 1)
   {
-    fprintf(stdout, "Invalid number of roms specified in roms.db (%d)\n", pce_romlist_size);
+    fprintf(stdout, "Invalid number of roms specified in roms.db (%d)\n", i);
     return;
   }
 
