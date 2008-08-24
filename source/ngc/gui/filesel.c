@@ -6,6 +6,8 @@
  *   . DVD access
  *   . easy subdirectory browsing
  *   . ROM browser
+ *   . alphabetical file sorting (Marty Disibio)
+ *   . load from history list (Marty Disibio)
  *
  ***************************************************************************/
 #include <pce.h>
@@ -18,12 +20,16 @@
 #include <fat.h>
 #include <sys/dir.h>
 
-#include "dvd.h"
 #include "iso9660.h"
 #include "font.h"
 #include "unzip.h"
+#include "history.h"
+#include "dvd.h"
+#ifdef HW_RVL
+#include "di/di.h"
+#endif
 
-#define PAGESIZE 12
+#define PAGESIZE 17
 #define PADCAL 60
 
 
@@ -36,8 +42,11 @@ static char rootSDdir[256];
 static u8 haveDVDdir = 0;
 static u8 haveSDdir  = 0;
 static u8 UseSDCARD = 0;
+static u8 UseHistory = 0;
 static int LoadFile (unsigned char *buffer);
 
+/* globals */
+FILE *sdfile;
 
 extern void ShowScreen();
 extern void ClearScreen();
@@ -46,9 +55,32 @@ extern void ShowAction(char *prompt);
 extern int hugoromsize;
 extern unsigned char *hugorom;
 
-/* globals */
-FILE *sdfile;
+/***************************************************************************
+ * FileSortCallback (Marty Disibio)
+ *
+ * Quick sort callback to sort file entries with the following order:
+ *   .
+ *   ..
+ *   <dirs>
+ *   <files>
+ ***************************************************************************/ 
+static int FileSortCallback(const void *f1, const void *f2)
+{
+	/* Special case for implicit directories */
+	if(((FILEENTRIES *)f1)->filename[0] == '.' || ((FILEENTRIES *)f2)->filename[0] == '.')
+	{
+		if(strcmp(((FILEENTRIES *)f1)->filename, ".") == 0) { return -1; }
+		if(strcmp(((FILEENTRIES *)f2)->filename, ".") == 0) { return 1; }
+		if(strcmp(((FILEENTRIES *)f1)->filename, "..") == 0) { return -1; }
+		if(strcmp(((FILEENTRIES *)f2)->filename, "..") == 0) { return 1; }
+	}
 
+	/* If one is a file and one is a directory the directory is first. */
+	if(((FILEENTRIES *)f1)->flags == 1 && ((FILEENTRIES *)f2)->flags == 0) return -1;
+	if(((FILEENTRIES *)f1)->flags == 0 && ((FILEENTRIES *)f2)->flags == 1) return 1;
+
+	return stricmp(((FILEENTRIES *)f1)->filename, ((FILEENTRIES *)f2)->filename);
+}
 
 /***************************************************************************
  * ShowFiles
@@ -114,33 +146,6 @@ static int updateSDdirname()
 }
 
 /***************************************************************************
- * FileSortCallback (submitted by Marty Disibio)
- *
- * Quick sort callback to sort file entries with the following order:
- *   .
- *   ..
- *   <dirs>
- *   <files>
- ***************************************************************************/ 
-static int FileSortCallback(const void *f1, const void *f2)
-{
-	/* Special case for implicit directories */
-	if(((FILEENTRIES *)f1)->filename[0] == '.' || ((FILEENTRIES *)f2)->filename[0] == '.')
-	{
-		if(strcmp(((FILEENTRIES *)f1)->filename, ".") == 0) { return -1; }
-		if(strcmp(((FILEENTRIES *)f2)->filename, ".") == 0) { return 1; }
-		if(strcmp(((FILEENTRIES *)f1)->filename, "..") == 0) { return -1; }
-		if(strcmp(((FILEENTRIES *)f2)->filename, "..") == 0) { return 1; }
-	}
-	
-	/* If one is a file and one is a directory the directory is first. */
-	if(((FILEENTRIES *)f1)->flags == 1 && ((FILEENTRIES *)f2)->flags == 0) return -1;
-	if(((FILEENTRIES *)f1)->flags == 0 && ((FILEENTRIES *)f2)->flags == 1) return 1;
-	
-	return stricmp(((FILEENTRIES *)f1)->filename, ((FILEENTRIES *)f2)->filename);
-}
-
-/***************************************************************************
  * parseSDdirectory
  *
  * List files into one SDCARD directory
@@ -173,7 +178,7 @@ static int parseSDdirectory()
   }
  
   dirclose(dir);
-
+  
   /* Sort the file list */
   qsort(filelist, nbfiles, sizeof(FILEENTRIES), FileSortCallback);
   
@@ -181,14 +186,49 @@ static int parseSDdirectory()
 }
 
 /****************************************************************************
+ * FileSelected
+ *
+ * Called when a file is selected by the user inside the FileSelector loop.
+ ****************************************************************************/ 
+extern void reloadrom ();
+extern short ogc_input__getMenuButtons(void);
+
+static void FileSelected()
+{		
+	/* If loading from history then we need to setup a few more things. */
+	if(UseHistory)
+	{	
+		/* Get the parent folder for the file. */
+		strncpy(rootSDdir, history.entries[selection].filepath, MAXJOLIET-1);
+		rootSDdir[MAXJOLIET-1] = '\0';
+	
+		/* Get the length of the file. This has to be done
+		 * before calling LoadFile().  */
+		char filepath[MAXJOLIET];
+		struct stat filestat;
+		snprintf(filepath, MAXJOLIET-1, "%s%s", history.entries[selection].filepath, history.entries[selection].filename);
+		filepath[MAXJOLIET-1] = '\0';			
+		if(stat(filepath, &filestat) == 0)
+		{
+			filelist[selection].length = filestat.st_size;
+		}	
+	}
+
+	/* Add/move the file to the top of the history. */
+	if (UseSDCARD) history_add_file(rootSDdir, filelist[selection].filename);
+	
+  rootdir = filelist[selection].offset;
+  rootdirlength = filelist[selection].length;
+  hugoromsize = LoadFile(hugorom);
+	cart_reload = 1;
+}
+
+/****************************************************************************
  * FileSelector
  *
  * Let user select a file from the File listing
  ****************************************************************************/
-extern void reloadrom ();
-extern short ogc_input__getMenuButtons(void);
-
-static void FileSelector()
+static void FileSelector () 
 {
 	short p;
 	int haverom = 0;
@@ -377,10 +417,7 @@ static void FileSelector()
 			}
 			else /*** This is a file ***/
 			{
-				rootdir = filelist[selection].offset;
-				rootdirlength = filelist[selection].length;
-        hugoromsize = LoadFile(hugorom);
-			  cart_reload = 1;
+				FileSelected();
 				haverom = 1;
 			}
 			redraw = 1;
@@ -393,18 +430,43 @@ static void FileSelector()
  *
  * Function to load a DVD directory and display to user.
  ****************************************************************************/
-void OpenDVD() 
+int OpenDVD () 
 {
   UseSDCARD = 0;
+  UseHistory = 0;
+  
   if (!getpvd())
   {
+		/* mount DVD */
 	  ShowAction("Mounting DVD ... Wait");
+
+#ifndef HW_RVL
 	  DVD_Mount();
+#else
+		u32 val;
+    DI_GetCoverRegister(&val);	
+
+		if(val & 0x1)
+    {
+      WaitPrompt("No Disc inserted !");
+			return 0;
+    }
+	  DI_Mount();
+	  while(DI_GetStatus() & DVD_INIT);
+    if (!(DI_GetStatus() & DVD_READY))
+    {
+      char msg[50];
+      sprintf(msg, "DI Status Error: 0x%08X\n",DI_GetStatus());
+      WaitPrompt(msg);
+      return 0;
+    }
+#endif      
+          
 	  haveDVDdir = 0;
 	  if (!getpvd())
 	  {
 		  WaitPrompt ("Failed to mount DVD");
-      return;
+      return 0;
 	  }
   }
   
@@ -424,6 +486,8 @@ void OpenDVD()
 	  }
   }
   else FileSelector ();
+
+  return 1;
 }
    
 /****************************************************************************
@@ -434,6 +498,8 @@ void OpenDVD()
 int OpenSD()
 {
   UseSDCARD = 1;
+  UseHistory = 0;
+  
   if (haveSDdir == 0)
   {
     /* don't mess with DVD entries */
@@ -472,6 +538,60 @@ int OpenSD()
   return 1;
 }
 
+/****************************************************************************
+ * OpenHistory
+ *
+ * Function to load a recent file from SDCARD (Marty Disibio)
+ ****************************************************************************/ 
+int OpenHistory()
+{
+	int i;
+
+	UseSDCARD = 1;
+	UseHistory = 1;
+
+  /* don't mess with other entries */
+  haveSDdir   = 0;
+  haveDVDdir  = 0;
+
+  /* reinit selector */
+  old_selection = selection = offset = old_offset = 0;
+
+  /* Recreate the file listing from the history
+   * as if all of the roms were in the same directory. */
+	ShowAction("Reading Files ...");
+
+	maxfiles = 0;
+	for(i=0; i < NUM_HISTORY_ENTRIES; i++)
+	{
+		if(history.entries[i].filepath[0] > 0)
+		{
+			filelist[i].offset = 0;
+			filelist[i].length = 0;
+			filelist[i].flags = 0;
+			filelist[i].filename_offset = 0;
+			strncpy(filelist[i].filename, history.entries[i].filename, MAXJOLIET-1);
+			filelist[i].filename[MAXJOLIET-1] = '\0';
+			
+			maxfiles++;
+		}
+		else
+		{
+			/* Found the end of the list. */
+			break;
+		}
+	}
+	
+	if(!maxfiles)
+	{
+		WaitPrompt ("No recent files");
+		return 0;
+	}
+	
+	FileSelector();
+  return 1;
+}
+  
 
 /****************************************************************************
  * LoadFile

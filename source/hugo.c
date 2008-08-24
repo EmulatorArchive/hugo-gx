@@ -1,5 +1,9 @@
 #include "hugo.h"
 
+#ifdef HW_RVL
+#include "di/di.h"
+#endif
+
 //! name of the backup ram filename
 static char backup_mem[PATH_MAX];
 
@@ -177,7 +181,12 @@ extern void MainMenu ();
 int
 main (int argc, char *argv[])
 {
-  int error = 0;
+#ifdef HW_RVL
+	/* initialize Wii DVD interface first */
+  DI_Init();
+#endif
+
+int error = 0;
 
   error = initialisation (argc, argv);
 

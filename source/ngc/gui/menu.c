@@ -14,6 +14,7 @@
 
 #ifdef HW_RVL
 #include <wiiuse/wpad.h>
+#include "di/di.h"
 #endif
 
 extern unsigned int *xfb[2];
@@ -357,37 +358,33 @@ int optionmenu ()
 					quit = 1;
 				}
 				break;
-
 		}
-
 	}
 
 	menu = prevmenu;
 	return 0;
 }
 			
+
 /****************************************************************************
- * Load ROM Menu
- ****************************************************************************/
-/****************************************************************************
- * Load game Menu
+ * Load Rom menu
  *
  ****************************************************************************/
 extern int OpenSD ();
-
-#ifndef HW_RVL
-extern void OpenDVD ();
+extern int OpenDVD ();
+extern int OpenHistory();
 static u8 load_menu = 0;
 
 void loadmenu ()
 {
+	int ret;
   int quit = 0;
-  int ret;
-  int loadcount = 3;
-  char loadmenu[3][20] =
-  {
+  int count = 5;
+  char item[5][20] = {
+		{"Load Recent"},
+		{"Load from SDCARD"},
     {"Load from DVD"},
-    {"Load from SDCARD"},
+    {"Stop DVD Motor"},
     {"Return to previous"}
   };
 
@@ -395,29 +392,35 @@ void loadmenu ()
 
   while (quit == 0)
   {
-    ret = DoMenu(&loadmenu[0], loadcount);
+    ret = DoMenu(&item[0], count);
 
     switch (ret)
     {
       case -1:
-      case  2:
+      case  4:
         quit = 1;
         break;
       
-      case 0: /*** Load from DVD ***/
-        OpenDVD ();
-        quit = 1;
+			case 0: /*** Load Recent ***/
+				quit = OpenHistory();
         break;
       
       case 1: /*** Load from SCDARD ***/
-        OpenSD ();
-        quit = 1;
+				quit = OpenSD();
+				break;
+
+      case 2:	 /*** Load from DVD ***/
+  			quit = OpenDVD();
+        break;
+  
+      case 3:  /*** Stop DVD Disc ***/
+        dvd_motor_off();
+				break;
     }
   }
   
   load_menu = menu;
 }
-#endif
 
 /****************************************************************************
  * Main Menu
@@ -428,30 +431,19 @@ int gamepaused = 0;
 
 void MainMenu()
 {
+	s8 ret;
+	u8 quit = 0;
   menu = 0;
-	int ret;
-	int quit = 0;
-#if defined(HW_RVL)
-	int count = 7;
+	u8 count = 7;
 	char items[7][20] =
-#else
-	int count = 8;
-	char items[8][20] =
-#endif
 	{
 		{"Play Game"},
 		{"Hard Reset"},
 		{"Load New Game"},
 		{"Emulator Options"},
-		{"WRAM Management"}, 
-#ifdef HW_RVL
+		{"WRAM Manager"},
 		{"Return to Loader"},
-		{"System Menu"}
-#else
-		{"Stop DVD Motor"},
-		{"SD/PSO Loader"},
 		{"System Reboot"}
-#endif
 	};
 
 	savetimer = timer_60;
@@ -471,11 +463,11 @@ void MainMenu()
 		switch (ret)
 		{
 			case -1:
-			case  0: /*** Play Game ***/
+			case  0:
 				if (hugoromsize) quit = 1;
 				break;
 
-			case 1:  /*** Reset Emulator */
+			case 1:
 				if (!cart_reload && hugoromsize)
 				{
 					ResetPCE();
@@ -485,54 +477,40 @@ void MainMenu()
 				}
 				break;
 
-			case 2 : /*** Load a new game ***/
-#ifdef HW_RVL
-        OpenSD ();
-#else
+			case 2:
         loadmenu();
-#endif
         menu = 0;
 				break;	
 
-   			case 3 : /*** Options ***/
+			case 3:
 				optionmenu();
 				break;
 
-   			case 4 : /*** WRAM Manager ***/
+   			case 4 :
 				quit = wrammenu();
 				break;
 
+			case 5: 
+        VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], COLOR_BLACK);
+        VIDEO_Flush();
+        VIDEO_WaitVSync();
 #ifdef HW_RVL
-			case 5:  /*** TP Reload ***/
-        VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], COLOR_BLACK);
-        VIDEO_Flush();
-        VIDEO_WaitVSync();
-        exit(0);
-				break;
-
-			case 6:  /*** Return to Wii System Menu ***/
-        VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], COLOR_BLACK);
-        VIDEO_Flush();
-        VIDEO_WaitVSync();
-				SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
-				break;
-#else
-			case 5:  /*** Stop DVD Motor ***/
-				ShowAction("Stopping DVD Motor ...");
-				dvd_motor_off();
-				break;
-
-			case 6:  /*** SD/PSO Reload ***/
-        VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], COLOR_BLACK);
-        VIDEO_Flush();
-        VIDEO_WaitVSync();
-        exit(0);
-				break;
-
-			case 7:  /*** Reboot Gamecube ***/
-				SYS_ResetSystem(SYS_HOTRESET,0,0);
-				break;
+        DI_Close();
 #endif
+        exit(0);
+				break;
+
+			case 6:
+        VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], COLOR_BLACK);
+        VIDEO_Flush();
+        VIDEO_WaitVSync();
+#ifdef HW_RVL
+        DI_Close();
+				SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
+#else
+				SYS_ResetSystem(SYS_HOTRESET,0,0);
+#endif
+				break;
 		}
 	}
 
