@@ -1,10 +1,18 @@
 HUGOGC CHANGELOG:
 ---------------
 
+Current:
+--------
 [NGC/WII]
 - fixed Load/Save WRAM options being inverted
 - fixed progressive mode (480p) automatic detection
-- added automatic alphabetical file sorting (thanks to Marty Disibio)
+- added automatic alphabetical file sorting (Marty Disibio)
+- added ROM History for faster ROM access (Marty Disibio)
+- fixed I/II & RUN/SELECT buttons being inverted
+- fixed ROM files scrolling size
+- added DVD support in Wii mode (no modchip required)
+
+
 
 14/06/2008:
 -----------
