@@ -1,8 +1,8 @@
 HUGOGC CHANGELOG:
 ---------------
 
-Current:
---------
+26/08/2008:
+-----------
 [NGC/WII]
 - fixed Load/Save WRAM options being inverted
 - fixed progressive mode (480p) automatic detection
