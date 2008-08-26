@@ -20,7 +20,7 @@ experience all over again!
   * 16-bit Stereo 32Khz Sound
   * Load ROMS up to 2.5Mb
   * Battery RAM (WRAM) support (save & load)
-  * DVD ROM Loading (GC version only, up to 4.7GB support for Wii users)
+  * DVD ROM Loading
   * SDCARD ROM Loading (with subdirectory support)
   * Zipped Roms Support (Single ROM per archive)
   * ISO/BIN support (no sound)
@@ -43,11 +43,10 @@ SDCARD users should create a directory named "hugo" at the root of the SDCARD.
 Inside this directory, you have to create then a subdirectory named "roms" to put all your roms.
 You should also create a subdirectory named "saves" where SRAM and FreezeState files will be saved.
 
-If using a DVD to load the roms, the format of the image you burned must be ISO9960
-or you won't be able to read from it. The maximal readable size is 1.35GB for Gamecube users
-and 4.7GB for Wii users.
-
-.Please note that only the Gamecube version of this emulator has DVD support, and you need a mod-chipped console to run DVD-R.
+ROMS can also be loaded from a ISO9660 DVD. A modchip is required in gameCube mode.
+On the Wii, no modchip is required but you will need to install the DI Stub before you can access DVD-/+R.
+More infos on HackMii: http://hackmii.com/2008/08/libdi-and-the-dvdx-installer/
+The maximal readable size is 1.35GB on Gamecube and 4.7GB on Wii (in GC compatible mode).
 
 
 IMPORTANT: When putting roms either on DVD or SDCARD, it is recommended to use subdirectories as there is 
@@ -73,8 +72,8 @@ and mapped as follows:
   Button 2        PCE Button 2
   Button A        PCE Turbo 1
   Button B        PCE Turbo 2
-  MINUS           PCE Run
-  PLUS		  PCE Select
+  MINUS           PCE Select
+  PLUS		  PCE Run
   HOME		  Menu
 
 When a Nunchuk is connected, the Wiimote is used vertically and mapped as follows:
@@ -83,19 +82,19 @@ When a Nunchuk is connected, the Wiimote is used vertically and mapped as follow
   Button B        PCE Button 2
   Z Trigger       PCE Turbo 1
   C Trigger       PCE Turbo 2
-  MINUS           PCE Run
-  PLUS		  PCE Select
+  MINUS           PCE Select
+  PLUS		  PCE Run
   HOME		  Menu
 
 When a Classic Controller is connected, the Wiimote is not used and the controller is
 mapped as follows:
 
-  Button B        PCE Button 1
-  Button A        PCE Button 2
-  Button Y        PCE Turbo 1
-  Button X        PCE Turbo 2
-  MINUS           PCE Run
-  PLUS		  PCE Select
+  Button A        PCE Button 1
+  Button B        PCE Button 2
+  Button X        PCE Turbo 1
+  Button Y        PCE Turbo 2
+  MINUS           PCE Select
+  PLUS		  PCE Run
   HOME		  Menu
 
 
@@ -122,14 +121,15 @@ mapped as follows:
   LOAD NEW GAME:
   ------------------------------------------------------
 
-  . Load from DVD: DVD must be ISO9660 (Gamecube Mode version only)
-  . Load from SDCARD: You have to use a SD adapter in a MC Slot (Gamecube Mode version)
-    or a SDCARD in the native Wii SD slot (Wii mode version)
-  
-  When using SDCARD, roms should be initially placed in the /hugo/roms/ subdirectory
-		  
-  In both cases, the maximum number of files per directory is 1000
-  It is recommended to use subdirectories.
+  Load Recent let you browse a ROM history list with the ten last opened ROM files.
+ This is only available for ROM files previously loaded from SDCARD.
+
+  Load from SDCARD  let you browse the SDCARD. 
+
+  Load from DVD let you browse the DVD. 
+
+  Stop DVD Motor will stop the DVD motor and the disc from spinning during playtime
+
   Pressing B will make you going up one directory while navigating.
 
 
@@ -174,46 +174,33 @@ mapped as follows:
 
    2/ when using SDCARD, the directory /hugo/saves is automatically created
 
-
-
-*(Gamecube Mode version only)
-------------------------------
-
-  STOP DVD MOTOR : 
-  -------------------------------------------
-   Stop the DVD motor and the disc from spinning during playtime 
-
-  SYSTEM REBOOT:
-  -------------------------------------------
-   This will reboot the system 
-
-  SD/PSO LOADER: 
-  -------------------------------------------
-    Return to the SD or PSO Loader
-
-
-*(Wii Mode version only)
-------------------------
-
-  SYSTEM MENU: 
-  ------------------------------------------
-	This will return to the Wii System menu 
-
+ 
   RETURN TO LOADER:
   ------------------------------------------
-	Return to the loader (TP Loader or HB channel)
+	Return to the loader (SDLOAD/PSOLOAD, TP Loader or HB channel)
+ 
+  REBOOT SYSTEM: 
+  ------------------------------------------
+	This will return to the System menu (Wii) or Reboot the Console (Gamecube)
 
 
 
 --[ Develloper Notes ]----------------------
 
-According to the GNU status of this project, the sourcecode MUST be accessible with any binary releases you made.
-To recompile the sourcecode, you will need to have installed:
- . last DevkitPPC environment
- . last compiled libOGC sources
+According to the GNU status of this project, the source code MUST be made available to anyone as soon
+as you have modified it and released a binary. 
+To recompile the source code, you will need to be familiar with development environment setup.
+If you don't, you might look at wiibrew or tehskeen's forum. 
 
-If you have no idea on how to compile DOLs , please refer to this thread:
-http://www.tehskeen.com/forums/showthread.php?t=2968.
+First, you will have to download and install the following tools/libraries: 
+1.	the last version of Devkitpro and DevkitPPC. Windows user should directly run the AutoInstaller version 
+2.	the CVS version of libogc. 
+3.	the last version of libfat.
+You can also get and compile the current source from CVS repository 
+4.	the last libDI source code. 
+
+Once you are done, grab the current hugo-gx source code from SVN (http://code.google.com/p/hugo-gx/source/checkout)
+then launch compile_all.bat from msys (installed with devkitpro) 
 
 
 --[ Credits ]----------------------------------------------------------------
