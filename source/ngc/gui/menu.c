@@ -308,8 +308,8 @@ int optionmenu ()
 	int prevmenu = menu;
 	int quit = 0;
 	int ret;
-	int count = 4;
-	char items[4][20];
+	int count = 2;
+	char items[2][20];
 
 	menu = 2;
 
@@ -319,8 +319,6 @@ int optionmenu ()
 		if (render == 1) sprintf (items[1], "Render: BILINEAR");
 		else if (render == 2) sprintf (items[1], "Render: PROGRESS");
 		else sprintf (items[1], "Render: ORIGINAL");
-    sprintf(items[2], "Country: %s", Country ? "JAP" : "USA");
-    sprintf(items[3], "Force US Card: %s", US_encoded_card ? "Y" : "N");
 
 		ret = DoMenu (&items[0], count);
 		switch (ret)
@@ -343,21 +341,6 @@ int optionmenu ()
             render = 0;
           }
 				}
-
-			case 2: // Console Type: TG-16 (USA) or PC-Engine
-				Country ^= 1;
-        break;
-
-      case 3: // Card Encoding
-        US_encoded_card ^= 1; 
-				if (!cart_reload && hugoromsize)
-				{
-					ResetPCE();
-					ResetSound();
-					savetimer = 0;
-					quit = 1;
-				}
-				break;
 		}
 	}
 
