@@ -308,10 +308,10 @@ int optionmenu ()
 	int prevmenu = menu;
 	int quit = 0;
 	int ret;
-	int count = 2;
-	char items[2][20];
+	int count = 3;
+	char items[3][20];
 
-	menu = 2;
+	menu = 0;
 
 	while (quit == 0)
 	{
@@ -319,11 +319,13 @@ int optionmenu ()
 		if (render == 1) sprintf (items[1], "Render: BILINEAR");
 		else if (render == 2) sprintf (items[1], "Render: PROGRESS");
 		else sprintf (items[1], "Render: ORIGINAL");
+    sprintf (items[2],"Return to previous");
 
 		ret = DoMenu (&items[0], count);
 		switch (ret)
 		{
 			case -1:
+      case 2:
 				quit = 1;
 				break;
 
@@ -341,6 +343,7 @@ int optionmenu ()
             render = 0;
           }
 				}
+        break;
 		}
 	}
 
