@@ -1,0 +1,226 @@
+            .  ___   ____                _________           ___
+	    .|  `|_|   `| ___ ___  __ .|    ____/ _______ .|  `|
+	    :|     _     ||  `|  `|(__)|    (_  `|/   _  `\|____/:.
+	    ...:::||____|:|____||_______/::::\_________/\_______/(____)::::...
+	    `-*-- -  -   -    -      -            -              ^cls
+	    Core-GraphX / PC Engine / Turbo GraphX Emulator
+                        Version 2.12 [Gamecube 0.0.1]
+                               30 December 2005
+                               www.tehskeen.com
+
+--[ Introduction ]-----------------------------------------------------------
+
+Hu-Go! GC is a PC Engine / TurboGrafx-16 emulator, now ported to the Nintendo
+Gamecube. Using this emulator you'll be able to enjoy the first 16-bit gaming
+experience all over again!
+
+--[ Features ]---------------------------------------------------------------
+
+  * Completely Re-Written Sound Engine
+  * 16-bit Stereo 32Khz Sound
+  * Load ROMS up to 2.5Mb
+  * Battery RAM (WRAM) support (save & load)
+  * DVD ROM Loading
+  * SDCARD ROM Loading (with subdirectory support)
+  * Zipped Roms Support (Single ROM per archive)
+  * ISO/BIN support (no sound)
+  * Save & Load WRAM files to/from Memory Card & SDCARD
+  * Horizontal Resolutions up to 320
+  * Wiimote/Nunchuk/Classic controller support (Wii only)
+
+--[ Installation ]-----------------------------------------------------------
+
+The emulator is provided as a .dol which is a Gamecube Executable. You only need to load and run
+the DOL on your GC or WII (Gamecube Pad needed) using various methods (Bootable DVD, SDLOAD,...)
+If you have no idea on how to load&run a DOL, please go here on follow the available guides:
+http://modyawii.tehskeen.com/  (Booting Homebrew Section)
+
+.Wii versions is also provided: they have been compiled to run in Wii mode and should be loaded
+using your prefered method (Twilight hack,...). This version provides extra features such as native SD 
+slot access and Wiimote support.
+
+SDCARD users should create a directory named "hugo" at the root of the SDCARD.
+Inside this directory, you have to create then a subdirectory named "roms" to put all your roms.
+You should also create a subdirectory named "saves" where SRAM and FreezeState files will be saved.
+
+ROMS can also be loaded from a ISO9660 DVD. A modchip is required in gameCube mode.
+On the Wii, no modchip is required but you will need to install the DI Stub before you can access DVD-/+R.
+More infos on HackMii: http://hackmii.com/2008/08/libdi-and-the-dvdx-installer/
+The maximal readable size is 1.35GB on Gamecube and 4.7GB on Wii (in GC compatible mode).
+
+
+IMPORTANT: When putting roms either on DVD or SDCARD, it is recommended to use subdirectories as there is 
+	   a limit of 1000 files per directory.
+
+
+--[ Controls ]---------------------------------------------------------------
+
+The Gamecube joypad is mapped as follows:
+
+  Button A        PCE Button 1
+  Button B        PCE Button 2
+  Button X        PCE Turbo 1
+  Button Y        PCE Turbo 2
+  Trigger Z       PCE Select
+  Start           PCE Run
+  L trigger	  Menu
+
+When no expansion controller is connected, the Wiimote is used horizontally
+and mapped as follows:
+
+  Button 1        PCE Button 1
+  Button 2        PCE Button 2
+  Button A        PCE Turbo 1
+  Button B        PCE Turbo 2
+  MINUS           PCE Select
+  PLUS		  PCE Run
+  HOME		  Menu
+
+When a Nunchuk is connected, the Wiimote is used vertically and mapped as follows:
+
+  Button A        PCE Button 1
+  Button B        PCE Button 2
+  Z Trigger       PCE Turbo 1
+  C Trigger       PCE Turbo 2
+  MINUS           PCE Select
+  PLUS		  PCE Run
+  HOME		  Menu
+
+When a Classic Controller is connected, the Wiimote is not used and the controller is
+mapped as follows:
+
+  Button A        PCE Button 1
+  Button B        PCE Button 2
+  Button X        PCE Turbo 1
+  Button Y        PCE Turbo 2
+  MINUS           PCE Select
+  PLUS		  PCE Run
+  HOME		  Menu
+
+
+
+--[ Main Menu ]---------------------------------------------------------------
+
+  You'll start off with the main introduction screen and after pressing "A"
+  you will be at the main menu. Note that at anytime during gameplay you can
+  return to the main menu by tapping on that little Z button (you know, the
+  one on your controller).
+
+  Of course it's a menu so you have yourself a few things to choose from.
+  So here's a list and what they do.
+
+
+  PLAY GAME:    Takes you into or back to the game.
+  -----------------------------------------------------
+
+
+  HARD RESET:    Reset emulator
+  -----------------------------------------------------
+
+
+  LOAD NEW GAME:
+  ------------------------------------------------------
+
+  Load Recent let you browse a ROM history list with the ten last opened ROM files.
+ This is only available for ROM files previously loaded from SDCARD.
+
+  Load from SDCARD  let you browse the SDCARD. 
+
+  Load from DVD let you browse the DVD. 
+
+  Stop DVD Motor will stop the DVD motor and the disc from spinning during playtime
+
+  Pressing B will make you going up one directory while navigating.
+
+
+  EMULATOR OPTIONS:
+  -------------------------------------------------------
+
+  Aspect let you choose the Display Aspect Ratio:
+	. ORIGINAL mode automatically set the correct aspect ratio exactly
+	as if you connected a real Pc-Engine on your TV.
+	. STRETCH mode will stretch the display vertically to fit the whole
+	screen area
+
+  Render let you choose the Display Rendering mode:
+	. ORIGINAL let you use the original PC-Engine rendering mode (240p):
+	In this mode, games should look exactly as they did on the real hardware.
+	Be aware that this mode might not being compatible with HDTV and the component cable.
+
+	.BILINEAR vertically scales (using hardware filtering features) the original display
+	to a 480 lines interlaced display.
+	In this mode, because of the higher resolution, games generally look better than on
+	the real hardware but some artifacts might appear during intensive and fast action.
+        
+	.PROGRESS swith the rendering to Progressive Video Mode (480p), 
+	only set when component cable is detected.
+
+
+  WRAM MANAGER:
+  -----------------------------------------------------
+    
+  This let you save & load the content of the system internal battery which is used
+  by some games to save your progress.
+  
+  You can now choose the device type and location.
+  Be sure to set this according to your system configuration before saving/loading files.
+
+  . Device: Let you choose the device to use: SDCARD or MCARDA or MCARDB
+
+   IMPORTANT:
+   
+   1/ when using NGC Memory Card in SLOTA, some mounting errors may occur. In this case,
+      remove and insert the Memory Card again before trying to save/load anything.
+
+   2/ when using SDCARD, the directory /hugo/saves is automatically created
+
+ 
+  RETURN TO LOADER:
+  ------------------------------------------
+	Return to the loader (SDLOAD/PSOLOAD, TP Loader or HB channel)
+ 
+  REBOOT SYSTEM: 
+  ------------------------------------------
+	This will return to the System menu (Wii) or Reboot the Console (Gamecube)
+
+
+
+--[ Develloper Notes ]----------------------
+
+According to the GNU status of this project, the source code MUST be made available to anyone as soon
+as you have modified it and released a binary. 
+To recompile the source code, you will need to be familiar with development environment setup.
+If you don't, you might look at wiibrew or tehskeen's forum. 
+
+First, you will have to download and install the following tools/libraries: 
+1.	the last version of Devkitpro and DevkitPPC. Windows user should directly run the AutoInstaller version 
+2.	the CVS version of libogc. 
+3.	the last version of libfat.
+You can also get and compile the current source from CVS repository 
+4.	the last libDI source code. 
+
+Once you are done, grab the current hugo-gx source code from SVN (http://code.google.com/p/hugo-gx/source/checkout)
+then launch compile_all.bat from msys (installed with devkitpro) 
+
+
+--[ Credits ]----------------------------------------------------------------
+
+Hu-Go! 2.12       Zeograd (http://www.zeograd.com)
+PC2E              Ki 
+TGEMU             Charles MacDonald (http://cgfm2.emuviews.com)
+
+PSG Info          Paul Clifford (http://www.magicengine.com/mkit/doc.html)
+SN76489           John Kortink
+
+Font Engine       Qoob
+DVD Magic         Ninjamod Team
+GX Engine         gc-linux team (http://www.gc-linux.org)
+libOGC            shagkur
+NGC porting code  softdev
+additional code	  eke-eke
+LibOGC		  shagkur & wintermute
+
+--[ Thanks ]-----------------------------------------------------------------
+
+The Hu-Go! logo, used on screen and for Save icons, are used with permission
+from Zeograd.

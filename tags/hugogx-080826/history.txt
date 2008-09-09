@@ -1,0 +1,68 @@
+HUGOGC CHANGELOG:
+---------------
+
+26/08/2008:
+-----------
+[NGC/WII]
+- fixed Load/Save WRAM options being inverted
+- fixed progressive mode (480p) automatic detection
+- added automatic alphabetical file sorting (Marty Disibio)
+- added ROM History for faster ROM access (Marty Disibio)
+- fixed I/II & RUN/SELECT buttons being inverted
+- fixed ROM files scrolling size
+- added DVD support in Wii mode (no modchip required)
+
+
+
+14/06/2008:
+-----------
+[PCE]
+- sourcecode cleanup
+- fixed multiplayer support (max. 4 players)
+- added preliminary Super CD-ROM support: Data only (.ISO & .BIN image files), no CDDA track support
+
+[NGC/WII]
+- fixed progressive mode support, now automatically detected
+
+[Wii only]
+- added automatic TV mode detection (from SYSCONF), no more PAL60 version needed
+- added option to return to Wii System Menu
+- fixed "TP reload" option: now compatible with HB channel
+- removed SD-Gekko support (Wii slot becomes default slot)
+- added Wii SD slot support for WRAM files
+- added Wiimote, Nunchuk & Classic controllers support through libwiiuse (see User Manual for default keys)
+
+
+19/04/2008:
+------------
+- added Wii mode support (including front SD rom loading with LFN, TP reload, ...)
+- added 4.7GB DVD support for chip-modded WII (GC mode only)
+- removed MPAL TV mode, added EURGB60 TV mode support: fix display problem for Wii users (GC&Wii mode)
+- added original rendering mode support (240i), like on real hardware
+- added 480p (progressive) rendering mode support (not supported by the PAL60 version, use the other one !)
+- added Console Reboot option in main menu (System Reboot)
+- WRAM files can now be saved/loaded to/from SDCARD: located in /hugo/saves from the root of your SDCARD (no Wii front SD support)
+- changed initial ROMS directory for SDCARD user: now looking for /hugo/roms from the root of your SDCARD
+- fixed broken MCARD support
+- modified controls when going into the rom selection menu (DVD or SDCARD), like other current emulators:
+   . use B button to go up one directory
+   . use Z button to quit the file selection menu 
+   . use L/R triggers to go down/up one full page
+   . use Left/Right buttons or Analog stick to scroll the selected entry's filename when it can't be full displayed
+ - various menu rearrangment, minor bugfixes & sourcecode cleanup
+
+
+24/03/2007 (eke-eke):
+-----------------------
+- added SDCARD support to hugo 0.03 (including subdirectory browsing & LFN support)
+- simplified DVD access and DVD automount using libogc "DVD_Mount" function (removed low-level drivecodes & access routines)
+- use ASM GU functions used intead of 'C' ones for rendering speedup
+- memory card mounting "fix"
+- dynamically allocated rom location: this means you don't need a linked rom anymore and we can now provide binary release 
+
+
+Original Releases by Softdev:
+
+- hugoGC 0.3
+- hugoGC 0.2
+- hugoGC 0.1
