@@ -20,6 +20,7 @@ int one_bit_set(UChar arg)
 }
 #endif
 
+int Cycles_per_Line;
 // flag-value table (for speed)
 
 UChar flnz_list[256] = {
@@ -1146,6 +1147,20 @@ int cpy_zp(void) {
 	  | flnz_list[(UChar)(reg_y-temp)];
   reg_pc+=2;
   cycles+=4;
+  return 0;
+}
+
+int csh(void) {
+  Cycles_per_Line = 454; /* 21477270 / 3 / 60 / 263 */ /* 7.16 Mhz CPU clock */
+  reg_pc++;
+  cycles+=3;
+  return 0;
+}
+
+int csl(void) {
+  Cycles_per_Line = 113; /* 21477270 / 12 / 60 / 263 */ /* 1.78 Mhz CPU clock */
+  reg_pc++;
+  cycles+=3;
   return 0;
 }
 
@@ -2453,6 +2468,7 @@ int tai(void) {
   from = get_16bit_addr(reg_pc+1);
   to   = get_16bit_addr(reg_pc+3);
   len  = get_16bit_addr(reg_pc+5);
+  if (len == 0) len = 0xffff; /* from pcetech.txt */
   alternate = 0;
 
 #if defined(CD_DEBUG) && defined(INLINED_ACCESSORS)
@@ -2462,11 +2478,15 @@ int tai(void) {
   cycles+=(6 * len) + 17;
   while (len-- != 0) {
     put_8bit_addr(to++, get_8bit_addr(from+alternate));
-    alternate ^= 1;
+   alternate ^= 1;
   }
   reg_pc+=7;
   return 0;
 }
+
+/* from pcetech.txt */
+static int tamwrite = -1;
+static int tmaread = 0;
 
 int tam(void) {
   UInt16 i;
@@ -2485,10 +2505,12 @@ int tam(void) {
     }
 #endif
 
+  tamwrite = -1;
   for (i = 0; i < 8; i++) {
     if (bitfld & (1 << i)) {
       mmr[i] = reg_a;
       bank_set(i, reg_a);
+      tamwrite = reg_a; /* from pcetech.txt */
     }
   }
 
@@ -2519,6 +2541,7 @@ int tdd(void) {
   from = get_16bit_addr(reg_pc+1);
   to   = get_16bit_addr(reg_pc+3);
   len  = get_16bit_addr(reg_pc+5);
+  if (len == 0) len = 0xffff; /* from pcetech.txt */
 
 #if defined(CD_DEBUG) && defined(INLINED_ACCESSORS)
   fprintf(stderr, "Transfert from bank 0x%02x to bank 0x%02x\n", mmr[from >> 13], mmr[to >> 13]);
@@ -2539,6 +2562,7 @@ int tia(void) {
   from = get_16bit_addr(reg_pc+1);
   to   = get_16bit_addr(reg_pc+3);
   len  = get_16bit_addr(reg_pc+5);
+  if (len == 0) len = 0xffff; /* from pcetech.txt */
   alternate = 0;
 
 #if defined(CD_DEBUG) && defined(INLINED_ACCESSORS)
@@ -2561,6 +2585,7 @@ int tii(void) {
   from = get_16bit_addr(reg_pc+1);
   to   = get_16bit_addr(reg_pc+3);
   len  = get_16bit_addr(reg_pc+5);
+  if (len == 0) len = 0xffff; /* from pcetech.txt */
 
 #if defined(CD_DEBUG) && defined(INLINED_ACCESSORS)
   fprintf(stderr, "Transfert from bank 0x%02x to bank 0x%02x\n", mmr[from >> 13], mmr[to >> 13]);
@@ -2581,6 +2606,7 @@ int tin(void) {
   from = get_16bit_addr(reg_pc+1);
   to   = get_16bit_addr(reg_pc+3);
   len  = get_16bit_addr(reg_pc+5);
+  if (len == 0) len = 0xffff; /* from pcetech.txt */
 
 #if defined(CD_DEBUG) && defined(INLINED_ACCESSORS)
   fprintf(stderr, "Transfert from bank 0x%02x to bank 0x%02x\n", mmr[from >> 13], mmr[to >> 13]);
@@ -2611,11 +2637,22 @@ int tma(void) {
     }
 #endif
 
-  for (i = 0; i < 8; i++) {
-    if (bitfld & (1 << i)) {
-      reg_a = mmr[i];
+  /* from pcetech.txt */
+  if (bitfld & 0xff)
+  {
+    for (i = 0; i < 8; i++) {
+      if (bitfld & (1 << i)) {
+        reg_a = mmr[i];
+      }
     }
+
+    tmaread = reg_a;
   }
+  else
+  {
+    reg_a = (tamwrite != -1) ? tamwrite : tmaread;
+  }
+
   reg_p &= ~FL_T;
   reg_pc+=2;
   cycles+=4;
@@ -2877,6 +2914,7 @@ Int6502 (UChar Type)
     }
 }
 
+#ifdef KERNEL_DEBUG
 //! Log all needed info to guess what went wrong in the cpu
 void dump_pce_core() {
 
@@ -2914,8 +2952,8 @@ void dump_pce_core() {
           Log("\n-------------------------------------------------------------\n");
         }
     }
-
 }
+#endif
 
 
 #ifdef BENCHMARK
@@ -3123,7 +3161,7 @@ void exe_go(void) {
 //  }
 
     // HSYNC stuff - count cycles:
-    if (cycles > 455)
+    if (cycles > Cycles_per_Line)
       {
 
 #ifdef BENCHMARK
@@ -3143,7 +3181,7 @@ void exe_go(void) {
           CycleNew);
 */
         CycleNew += cycles;
-        cycles -= 455;
+        cycles -= Cycles_per_Line;
         // scanline++;
 
         // Log("Calling periodic handler\n");

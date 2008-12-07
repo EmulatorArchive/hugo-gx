@@ -2363,6 +2363,8 @@ ResetPCE (M6502 * M)
   io.psg_volume = 0;
   io.psg_ch = 0;
 
+  Cycles_per_Line = 113; /* 21477270 / 12 / 60 / 263 */ /* 1.78 Mhz CPU clock */
+
 /* TEST */
   io.screen_w = 255;
 /* TEST */// normally 256

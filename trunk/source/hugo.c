@@ -183,6 +183,7 @@ main (int argc, char *argv[])
 {
 #ifdef HW_RVL
 	/* initialize Wii DVD interface first */
+  DI_Close();
   DI_Init();
 #endif
 

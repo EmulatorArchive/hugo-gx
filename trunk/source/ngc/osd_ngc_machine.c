@@ -38,9 +38,21 @@ extern void dvd_drive_detect();
 extern void credits();
 extern void pourlogo();
 extern void unpack();
+extern void MainMenu();
 
 int hugoromsize;
 unsigned char *hugorom;
+
+int Shutdown = 0;
+
+#ifdef HW_RVL
+/* Power Button callback */
+void Power_Off(void)
+{
+  Shutdown = 1;
+   MainMenu();
+}
+#endif
 
 int osd_init_machine(void)
 {
@@ -55,6 +67,7 @@ int osd_init_machine(void)
 
   /* initialize LibFAT */
   fatInitDefault();
+  fatEnableReadAhead (PI_DEFAULT, 6, 64);
 
   /* Intro Screen */
   unpack();
