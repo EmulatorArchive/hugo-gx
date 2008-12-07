@@ -95,6 +95,8 @@ extern int cpx_zp(void);
 extern int cpy_abs(void);
 extern int cpy_imm(void);
 extern int cpy_zp(void);
+extern int csh(void);
+extern int csl(void);
 extern int dec_a(void);
 extern int dec_abs(void);
 extern int dec_absx(void);
@@ -267,6 +269,8 @@ extern int tya(void);
 #define	VEC_BRK		0xFFF6
 
 extern UChar flnz_list[256];
+
+extern int Cycles_per_Line;
 
 inline UChar imm_operand(UInt16 addr);
 inline UChar get_8bit_zp(UChar zp_addr);

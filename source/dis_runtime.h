@@ -121,7 +121,7 @@ operation optable_runtime[256] = {
   { eor_zpindy, AM_ZPINDY,  "EOR" },      /* $51 */
   { eor_zpind,  AM_ZPIND,   "EOR" },      /* $52 */
   { tam,        AM_IMMED,   "TAM" },      /* $53 */
-  { nop,        AM_IMPL,    "CSL" },      /* $54 */
+  { csl,        AM_IMPL,    "CSL" },      /* $54 */
   { eor_zpx,    AM_ZPX,     "EOR" },      /* $55 */
   { lsr_zpx,    AM_ZPX,     "LSR" },      /* $56 */
   { rmb5,       AM_ZP,      "RMB5"},      /* $57 */
@@ -249,7 +249,7 @@ operation optable_runtime[256] = {
   { cmp_zpindy, AM_ZPINDY,  "CMP" },      /* $D1 */
   { cmp_zpind,  AM_ZPIND,   "CMP" },      /* $D2 */
   { tin,        AM_XFER,    "TIN" },      /* $D3 */
-  { nop,        AM_IMPL,    "CSH" },      /* $D4 */
+  { csh,        AM_IMPL,    "CSH" },      /* $D4 */
   { cmp_zpx,    AM_ZPX,     "CMP" },      /* $D5 */
   { dec_zpx,    AM_ZPX,     "DEC" },      /* $D6 */
   { smb5,       AM_ZP,      "SMB5"},      /* $D7 */

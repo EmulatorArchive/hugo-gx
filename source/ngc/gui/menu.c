@@ -316,8 +316,8 @@ int optionmenu ()
 	while (quit == 0)
 	{
 		sprintf(items[0], "Aspect: %s", aspect ? "ORIGINAL" : "STRETCH");
-		if (render == 1) sprintf (items[1], "Render: BILINEAR");
-		else if (render == 2) sprintf (items[1], "Render: PROGRESS");
+		if (render == 1) sprintf (items[1], "Render: INTERLACED");
+		else if (render == 2) sprintf (items[1], "Render: PROGRESSIVE");
 		else sprintf (items[1], "Render: ORIGINAL");
     sprintf (items[2],"Return to previous");
 
@@ -360,52 +360,62 @@ extern int OpenSD ();
 extern int OpenDVD ();
 extern int OpenHistory();
 static u8 load_menu = 0;
+static u8 dvd_on = 0;
 
-void loadmenu ()
+int loadmenu ()
 {
+	int prevmenu = menu;
 	int ret;
-  int quit = 0;
-  int count = 5;
-  char item[5][20] = {
+	int quit = 0;
+  int count = 3 + dvd_on;
+  char item[4][20] = {
 		{"Load Recent"},
 		{"Load from SDCARD"},
-    {"Load from DVD"},
-    {"Stop DVD Motor"},
-    {"Return to previous"}
-  };
+		{"Load from DVD"},
+    {"Stop DVD Motor"}
+	};
 
-  menu = load_menu;
-
-  while (quit == 0)
-  {
-    ret = DoMenu(&item[0], count);
-
-    switch (ret)
-    {
-      case -1:
-      case  4:
-        quit = 1;
-        break;
-      
-			case 0: /*** Load Recent ***/
-				quit = OpenHistory();
-        break;
-      
-      case 1: /*** Load from SCDARD ***/
-				quit = OpenSD();
+	menu = load_menu;
+	
+	while (quit == 0)
+	{
+		ret = DoMenu (&item[0], count);
+		switch (ret)
+		{
+			case -1: /*** Button B ***/
+				quit = 1;
 				break;
 
-      case 2:	 /*** Load from DVD ***/
-  			quit = OpenDVD();
+			case 0: /*** Load Recent ***/
+				load_menu = menu;
+        if (OpenHistory()) return 1;
+				break;
+
+			case 1:  /*** Load from SCDARD ***/
+				load_menu = menu;
+				if (OpenSD()) return 1;
+				break;
+
+      case 2:
+				load_menu = menu;
+        if (OpenDVD())
+        {
+          dvd_on = 1;
+          return 1;
+        }
         break;
   
       case 3:  /*** Stop DVD Disc ***/
         dvd_motor_off();
+        dvd_on = 0;
+        count = 3 + dvd_on;
+				menu = load_menu;
 				break;
     }
-  }
-  
-  load_menu = menu;
+	}
+
+  menu = prevmenu;
+  return 0;
 }
 
 /****************************************************************************
@@ -413,6 +423,7 @@ void loadmenu ()
  *
  ****************************************************************************/
 extern int frameticker;
+extern int Shutdown;
 int gamepaused = 0;
 
 void MainMenu()
@@ -444,6 +455,17 @@ void MainMenu()
 
 	while (quit == 0)
 	{
+
+#ifdef HW_RVL
+    /* wii shutdown */
+    if (Shutdown)
+    {
+      /* shutdown Wii */
+      DI_Close();
+      SYS_ResetSystem(SYS_POWEROFF, 0, 0);
+    }
+#endif
+
 		ret = DoMenu (&items[0], count);
 
 		switch (ret)
@@ -464,8 +486,7 @@ void MainMenu()
 				break;
 
 			case 2:
-        loadmenu();
-        menu = 0;
+        quit = loadmenu();
 				break;	
 
 			case 3:
