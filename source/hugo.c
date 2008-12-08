@@ -1,7 +1,7 @@
 #include "hugo.h"
 
 #ifdef HW_RVL
-#include "di/di.h"
+#include <di/di.h>
 #endif
 
 //! name of the backup ram filename

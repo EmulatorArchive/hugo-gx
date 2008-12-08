@@ -18,6 +18,7 @@
 
 #ifdef HW_RVL
 #include <wiiuse/wpad.h>
+#include <di/di.h>
 #endif
 
 #define MAX_INPUTS 4
@@ -152,6 +153,7 @@ extern void ShowAction(char *prompt);
 extern void ShowScreen();
 extern void ClearScreen();
 extern void MainMenu();
+extern int Shutdown;
 
 /*******************************
   gamepad support
@@ -509,6 +511,15 @@ void ogc_input__config(u8 pad, u8 type)
 
 u16 ogc_input__getMenuButtons(void)
 {
+#ifdef HW_RVL
+  if (Shutdown)
+  {
+    /* shutdown Wii */
+    DI_Close();
+    SYS_ResetSystem(SYS_POWEROFF, 0, 0);
+  }
+#endif
+
   /* slowdown input updates */
   VIDEO_WaitVSync();
 
