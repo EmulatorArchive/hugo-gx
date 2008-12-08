@@ -67,7 +67,6 @@ int osd_init_machine(void)
 
   /* initialize LibFAT */
   fatInitDefault();
-  fatEnableReadAhead (PI_DEFAULT, 6, 64);
 
   /* Intro Screen */
   unpack();

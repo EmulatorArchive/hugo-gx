@@ -284,7 +284,12 @@ void ogc_video__init(void)
   tvmodes[0]->viTVMode = VI_TVMODE(vmode->viTVMode >> 2, VI_NON_INTERLACE);
   tvmodes[1]->viTVMode = VI_TVMODE(vmode->viTVMode >> 2, VI_INTERLACE);
 
-  /* set default rendering mode */
+#ifndef HW_RVL
+  /* force 480p on NTSC GameCube if the Component Cable is present */
+  if (VIDEO_HaveComponentCable()) vmode = &TVNtsc480Prog;
+#endif
+
+/* set default rendering mode */
   render = (vmode->viTVMode == VI_TVMODE_NTSC_PROG) ? 2 : 0;
    
   /* configure video mode */

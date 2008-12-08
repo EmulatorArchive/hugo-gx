@@ -14,7 +14,7 @@
 
 #ifdef HW_RVL
 #include <wiiuse/wpad.h>
-#include "di/di.h"
+#include <di/di.h>
 #endif
 
 extern unsigned int *xfb[2];
@@ -423,7 +423,6 @@ int loadmenu ()
  *
  ****************************************************************************/
 extern int frameticker;
-extern int Shutdown;
 int gamepaused = 0;
 
 void MainMenu()
@@ -455,17 +454,6 @@ void MainMenu()
 
 	while (quit == 0)
 	{
-
-#ifdef HW_RVL
-    /* wii shutdown */
-    if (Shutdown)
-    {
-      /* shutdown Wii */
-      DI_Close();
-      SYS_ResetSystem(SYS_POWEROFF, 0, 0);
-    }
-#endif
-
 		ret = DoMenu (&items[0], count);
 
 		switch (ret)

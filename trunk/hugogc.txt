@@ -143,16 +143,16 @@ mapped as follows:
 	screen area
 
   Render let you choose the Display Rendering mode:
-	. ORIGINAL let you use the original PC-Engine rendering mode (240p):
+	.ORIGINAL let you use the original PC-Engine rendering mode (240p):
 	In this mode, games should look exactly as they did on the real hardware.
 	Be aware that this mode might not being compatible with HDTV and the component cable.
 
-	.BILINEAR vertically scales (using hardware filtering features) the original display
+	.INTERLACED vertically scales (using hardware filtering features) the original display
 	to a 480 lines interlaced display.
 	In this mode, because of the higher resolution, games generally look better than on
 	the real hardware but some artifacts might appear during intensive and fast action.
         
-	.PROGRESS swith the rendering to Progressive Video Mode (480p), 
+	.PROGRESSIVE swith the rendering to Progressive Video Mode (480p), 
 	only set when component cable is detected.
 
 
