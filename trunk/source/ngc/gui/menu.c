@@ -1,16 +1,16 @@
 /****************************************************************************
  * Nintendo Gamecube User Menu
  ****************************************************************************/
-#include <pce.h>
-#include <gccore.h>
-#include <ogcsys.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <zlib.h>
-#include "hugologo.h"
+#include "pce.h"
+#include "osd_ngc_machine.h"
 #include "font.h"
+#include "hugologo.h"
+#include "filesel.h"
+#include "file_dvd.h"
+#include "file_fat.h"
 #include "dvd.h"
+
+#include <zlib.h>
 
 #ifdef HW_RVL
 #include <wiiuse/wpad.h>
@@ -21,7 +21,6 @@ extern unsigned int *xfb[2];
 extern int whichfb;
 extern GXRModeObj *vmode;
 extern int copynow;
-extern short ogc_input__getMenuButtons();
 extern void ogc_video__reset();
 extern void ResetSound();
 extern int hugoromsize;
@@ -36,76 +35,87 @@ char version[] = { "Version 2.12" };
  ****************************************************************************/
 void unpack()
 {
-	unsigned long res, inbytes, outbytes;
-	int *temp;
-	int h,w,v;
+  unsigned long res, inbytes, outbytes;
+  int *temp;
+  int h,w,v;
 
-	inbytes = hugologo_COMPRESSED;
-	outbytes = hugologo_RAW;
+  inbytes = hugologo_COMPRESSED;
+  outbytes = hugologo_RAW;
 
-	/*** Allocate the background bitmap ***/
-	backdrop = malloc( 320 * 480 * 4 );
+  /*** Allocate the background bitmap ***/
+  backdrop = malloc( 320 * 480 * 4 );
 
-	/*** Allocate temporary space ***/
-	temp = malloc(outbytes + 16);
-	res = uncompress( (Bytef *)temp, &outbytes, (Bytef *)hugologo, inbytes);
+  /*** Allocate temporary space ***/
+  temp = malloc(outbytes + 16);
+  res = uncompress( (Bytef *)temp, &outbytes, (Bytef *)hugologo, inbytes);
 
-	memcpy(&w, temp, 4);
-	backcolour = w;
+  memcpy(&w, temp, 4);
+  backcolour = w;
 
-	/*** Fill backdrop ***/
-	for (h = 0; h < (320 * 480); h++) backdrop[h] = w;
+  /*** Fill backdrop ***/
+  for (h = 0; h < (320 * 480); h++) backdrop[h] = w;
 
-	/*** Put picture in position ***/
-	v = 0;
-	for (h = 0; h < hugologo_HEIGHT; h++)
-	{
-		for (w = 0; w < hugologo_WIDTH >> 1; w++)
-			backdrop[((h + 40) * 320) + w + 89] = temp[v++];		
-	}
+  /*** Put picture in position ***/
+  v = 0;
+  for (h = 0; h < hugologo_HEIGHT; h++)
+  {
+    for (w = 0; w < hugologo_WIDTH >> 1; w++)
+      backdrop[((h + 40) * 320) + w + 89] = temp[v++];    
+  }
 
-	free( temp );
-	init_font();
+  free( temp );
+  init_font();
 }
 
-void copybackdrop()
+static void copybackdrop()
 {
-	whichfb ^= 1;
-	memcpy(xfb[whichfb], backdrop, 320 * 480 * 4);
+  whichfb ^= 1;
+  memcpy (xfb[whichfb], backdrop,  320 * 480 * 4);
 }
 
 /****************************************************************************
- *  Generic Display functions
+ *  Display functions
  *
  ****************************************************************************/
-void ShowScreen()
+u8 SILENT = 0;
+
+void SetScreen ()
 {
-	VIDEO_SetNextFramebuffer(xfb[whichfb]);
-	VIDEO_Flush();
-	VIDEO_WaitVSync();
+  VIDEO_SetNextFramebuffer (xfb[whichfb]);
+  VIDEO_Flush ();
+  VIDEO_WaitVSync ();
 }
 
 void ClearScreen()
 {
-	whichfb ^= 1;
-	VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], backcolour);
+  whichfb ^= 1;
+  VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], backcolour);
 }
 
-void WaitPrompt( char *prompt )
+void WaitButtonA ()
 {
-	copybackdrop();
-	write_centre( 280, prompt );
-	write_centre( 280 + font_height, "Press A to continue");
-	ShowScreen();
-	while (!(ogc_input__getMenuButtons() & PAD_BUTTON_A));
-	while (ogc_input__getMenuButtons() & PAD_BUTTON_A);
+  s16 p = ogc_input__getMenuButtons();
+  while (p & PAD_BUTTON_A)    p = ogc_input__getMenuButtons();
+  while (!(p & PAD_BUTTON_A)) p = ogc_input__getMenuButtons();
 }
 
-void ShowAction(char *prompt)
+void WaitPrompt (char *msg)
 {
-	copybackdrop();
-	write_centre(290, prompt);
-	ShowScreen();
+  if (SILENT) return;
+  ClearScreen();
+  WriteCentre(254, msg);
+  WriteCentre(254 + fheight, "Press A to Continue");
+  SetScreen();
+  WaitButtonA ();
+}
+
+void ShowAction (char *msg)
+{
+  if (SILENT) return;
+
+  ClearScreen();
+  WriteCentre(254, msg);
+  SetScreen();
 }
 
 /****************************************************************************
@@ -115,38 +125,38 @@ void ShowAction(char *prompt)
  ****************************************************************************/
 void pourlogo()
 {
-	int i;
-	int w;
-	int h;
-	int v;
-	int linecount = 0;
+  int i;
+  int w;
+  int h;
+  int v;
+  int linecount = 0;
 
-	/*** Pour in the logo ***/
-	memcpy(&w, backdrop, 4);
+  /*** Pour in the logo ***/
+  memcpy(&w, backdrop, 4);
 
-	for (i = 0; i < 100; i++)
-	{
-		whichfb ^= 1;
-		for (h = 0; h < ( 320 * 480 ); h++) xfb[whichfb][h] = w;
+  for (i = 0; i < 100; i++)
+  {
+    whichfb ^= 1;
+    for (h = 0; h < ( 320 * 480 ); h++) xfb[whichfb][h] = w;
 
-		/*** Now pour 4 lines at a time ***/
-		/*** Copy base on screen ***/
-		if (linecount)
-		{
-			memcpy(&xfb[whichfb][((334 - linecount) * 320)], 
-			       backdrop +((228 - linecount) * 320),
-			       linecount * 4 * 320);
+    /*** Now pour 4 lines at a time ***/
+    /*** Copy base on screen ***/
+    if (linecount)
+    {
+      memcpy(&xfb[whichfb][((334 - linecount) * 320)], 
+             backdrop +((228 - linecount) * 320),
+             linecount * 4 * 320);
 
-			for ( v = 0; v < (334-linecount); v++)
-				memcpy(&xfb[whichfb][v * 320], backdrop + ((228-linecount) * 320), 320 * 4);
-		}
+      for ( v = 0; v < (334-linecount); v++)
+        memcpy(&xfb[whichfb][v * 320], backdrop + ((228-linecount) * 320), 320 * 4);
+    }
 
-		linecount += 2;
-		write_centre(340, version);
-		ShowScreen();
-	}
+    linecount += 2;
+    WriteCentre(340, version);
+    SetScreen();
+  }
 
-	sleep(1);
+  sleep(1);
 }
 
 /****************************************************************************
@@ -154,19 +164,21 @@ void pourlogo()
  ****************************************************************************/
 void credits()
 {
-	int p = 220 + ( font_height << 1);
-	copybackdrop();
-	write_centre(p, "Hu-Go! - Zeograd http://www.zeograd.com");
-	p += font_height;
-	write_centre(p, "PCE PSG Info - Paul Clifford / John Kortink / Ki");
-	p += font_height;
-	write_centre(p, "Gamecube & Wii Port - softdev / eke-eke");
-	p += font_height;
-	write_centre(p, "libOGC - shagkur / wntrmute");
-	p += ( font_height << 1 );
-	write_centre(p, "Support - http://www.tehskeen.com");
-	ShowScreen();
-	sleep(1);
+  int p = 220 + ( fheight << 1);
+  copybackdrop();
+  WriteCentre(p, "Hu-Go! - Zeograd http://www.zeograd.com");
+  p += fheight;
+  WriteCentre(p, "PCE PSG Info - Paul Clifford / John Kortink / Ki");
+  p += fheight;
+  WriteCentre(p, "Gamecube & Wii Port - softdev / eke-eke");
+  p += fheight;
+  WriteCentre(p, "libOGC - shagkur / wntrmute");
+  p += fheight;
+  WriteCentre(p, "Support - http://www.tehskeen.com");
+  p += ( fheight << 1 );
+  WriteCentre(p, "Press Button A");
+  SetScreen();
+  WaitButtonA ();
 }
 
 /****************************************************************************
@@ -176,19 +188,19 @@ static int menu = 0;
 
 void DrawMenu( char items[][20], int maxitems, int selected )
 {
-	int i,p;
+  int i,p;
 
   copybackdrop();
-  write_centre( 210, version);
-	p = 210 + (font_height << 1);
-	for ( i = 0 ; i < maxitems ; i++ )
-	{
-		if ( i == selected ) write_centre_hi( p, items[i] );
-		else write_centre( p, items[i] );
-		p += font_height;
-	}
+  WriteCentre( 210, version);
+  p = 210 + (fheight << 1);
+  for ( i = 0 ; i < maxitems ; i++ )
+  {
+    if ( i == selected ) WriteCentre_HL( p, items[i] );
+    else WriteCentre( p, items[i] );
+    p += fheight;
+  }
 
-	ShowScreen();
+  SetScreen();
 }
 
 int DoMenu (char items[][20], int maxitems)
@@ -201,46 +213,46 @@ int DoMenu (char items[][20], int maxitems)
   while (quit == 0)
   {
     if (redraw)
-	  {
+    {
       DrawMenu (&items[0], maxitems, menu);
       redraw = 0;
-	  }
+    }
 
     p = ogc_input__getMenuButtons();
 
-	  /*** Look for up ***/
+    /*** Look for up ***/
     if (p & PAD_BUTTON_UP)
-	  {
-	    redraw = 1;
-	    menu--;
+    {
+      redraw = 1;
+      menu--;
       if (menu < 0) menu = maxitems - 1;
-	  }
+    }
 
-	  /*** Look for down ***/
+    /*** Look for down ***/
     if (p & PAD_BUTTON_DOWN)
-	  {
-	    redraw = 1;
-	    menu++;
+    {
+      redraw = 1;
+      menu++;
       if (menu == maxitems) menu = 0;
-	  }
+    }
 
     if (p & PAD_BUTTON_A)
-	  {
+    {
       quit = 1;
       ret = menu;
-	  }
-	
-	  if (p & PAD_BUTTON_LEFT)
-	  {
-	    quit = 1;
-	    ret = 0 - 2 - menu;
-	  }
-	
+    }
+  
+    if (p & PAD_BUTTON_LEFT)
+    {
+      quit = 1;
+      ret = 0 - 2 - menu;
+    }
+  
     if (p & PAD_BUTTON_B)
-	  {
-	    quit = 1;
-	    ret = -1;
-	  }
+    {
+      quit = 1;
+      ret = -1;
+    }
   }
 
   return ret;
@@ -255,47 +267,47 @@ extern int ManageWRAM(u8 direction, u8 device);
 
 int wrammenu ()
 {
-	int prevmenu = menu;
-	int quit = 0;
-	int ret;
-	int count = 4;
-	char items[4][20];
+  int prevmenu = menu;
+  int quit = 0;
+  int ret;
+  int count = 4;
+  char items[4][20];
 
-	sprintf(items[1], "Load WRAM");
-	sprintf(items[2], "Save WRAM");
-	sprintf(items[3], "Return to previous");
+  sprintf(items[1], "Save WRAM");
+  sprintf(items[2], "Load WRAM");
+  sprintf(items[3], "Return to previous");
 
-	menu = 2;
+  menu = 2;
 
-	while (quit == 0)
-	{
-    if (device == 0) sprintf(items[0], "Device: SDCARD");
+  while (quit == 0)
+  {
+    if (device == 0) sprintf(items[0], "Device: FAT");
     else if (device == 1) sprintf(items[0], "Device: MCARD A");
     else if (device == 2) sprintf(items[0], "Device: MCARD B");
 
     ret = DoMenu (&items[0], count);
-		switch (ret)
-		{
-			case -1:
+    switch (ret)
+    {
+      case -1:
       case 3:
-				quit = 1;
-				break;
+        quit = 1;
+        break;
 
-			case 0:
+      case 0:
         device = (device + 1)%3;
-				break;
+        break;
 
       case 1:
       case 2:
         quit = ManageWRAM(ret-1,device);
         if (quit) return 1;
         break;
-		}
+    }
 
-	}
+  }
 
-	menu = prevmenu;
-	return 0;
+  menu = prevmenu;
+  return 0;
 }
 /****************************************************************************
  * OPTION Menu
@@ -305,114 +317,147 @@ extern u8 render;
 
 int optionmenu ()
 {
-	int prevmenu = menu;
-	int quit = 0;
-	int ret;
-	int count = 3;
-	char items[3][20];
+  int prevmenu = menu;
+  int quit = 0;
+  int ret;
+  int count = 3;
+  char items[3][20];
 
-	menu = 0;
+  menu = 0;
 
-	while (quit == 0)
-	{
-		sprintf(items[0], "Aspect: %s", aspect ? "ORIGINAL" : "STRETCH");
-		if (render == 1) sprintf (items[1], "Render: INTERLACED");
-		else if (render == 2) sprintf (items[1], "Render: PROGRESSIVE");
-		else sprintf (items[1], "Render: ORIGINAL");
+  while (quit == 0)
+  {
+    sprintf(items[0], "Aspect: %s", aspect ? "ORIGINAL" : "STRETCH");
+    if (render == 1) sprintf (items[1], "Render: INTERLACED");
+    else if (render == 2) sprintf (items[1], "Render: PROGRESSIVE");
+    else sprintf (items[1], "Render: ORIGINAL");
     sprintf (items[2],"Return to previous");
 
-		ret = DoMenu (&items[0], count);
-		switch (ret)
-		{
-			case -1:
+    ret = DoMenu (&items[0], count);
+    switch (ret)
+    {
+      case -1:
       case 2:
-				quit = 1;
-				break;
+        quit = 1;
+        break;
 
-			case 0:
-				aspect ^= 1;
-				break;
+      case 0:
+        aspect ^= 1;
+        break;
 
-			case 1:
-				render = (render + 1) % 3;
-				if (render == 2)
-				{
-					if (!VIDEO_HaveComponentCable())
+      case 1:
+        render = (render + 1) % 3;
+        if (render == 2)
+        {
+          if (!VIDEO_HaveComponentCable())
           {
             /* do nothing if component cable is not detected */
             render = 0;
           }
-				}
+        }
         break;
-		}
-	}
+    }
+  }
 
-	menu = prevmenu;
-	return 0;
+  menu = prevmenu;
+  return 0;
 }
-			
+      
 
 /****************************************************************************
  * Load Rom menu
  *
  ****************************************************************************/
-extern int OpenSD ();
-extern int OpenDVD ();
-extern int OpenHistory();
+extern int hugoromsize;
+extern unsigned char *hugorom;
+extern char rom_filename[MAXJOLIET];
 static u8 load_menu = 0;
 static u8 dvd_on = 0;
 
 int loadmenu ()
 {
-	int prevmenu = menu;
-	int ret;
-	int quit = 0;
-  int count = 3 + dvd_on;
-  char item[4][20] = {
-		{"Load Recent"},
-		{"Load from SDCARD"},
-		{"Load from DVD"},
+  int prevmenu = menu;
+  int ret,count,size;
+  int quit = 0;
+#ifdef HW_RVL
+  char item[5][20] = {
+    {"Load Recent"},
+    {"Load from SD"},
+    {"Load from USB"},
+    {"Load from DVD"},
     {"Stop DVD Motor"}
-	};
+  };
+#else
+  char item[4][20] = {
+    {"Load Recent"},
+    {"Load from SD"},
+    {"Load from DVD"},
+    {"Stop DVD Motor"}
+  };
+#endif
 
-	menu = load_menu;
-	
-	while (quit == 0)
-	{
-		ret = DoMenu (&item[0], count);
-		switch (ret)
-		{
-			case -1: /*** Button B ***/
-				quit = 1;
-				break;
+  menu = load_menu;
+  
+  while (quit == 0)
+  {
+#ifdef HW_RVL
+    count = 4 + dvd_on;
+#else
+    count = 3 + dvd_on;
+#endif
+    ret = DoMenu (&item[0], count);
+    switch (ret)
+    {
+      /*** Button B ***/
+      case -1: 
+        quit = 1;
+        break;
 
-			case 0: /*** Load Recent ***/
-				load_menu = menu;
-        if (OpenHistory()) return 1;
-				break;
-
-			case 1:  /*** Load from SCDARD ***/
-				load_menu = menu;
-				if (OpenSD()) return 1;
-				break;
-
+      /*** Load from DVD ***/
+#ifdef HW_RVL
+      case 3:
+#else
       case 2:
-				load_menu = menu;
-        if (OpenDVD())
+#endif
+        load_menu = menu;
+        size = DVD_Open(hugorom);
+        if (size)
         {
           dvd_on = 1;
+          hugoromsize = size;
+          cart_reload = 1;
+          sprintf(rom_filename,"%s",filelist[selection].filename);
+          rom_filename[strlen(rom_filename) - 4] = 0;
           return 1;
         }
         break;
-  
-      case 3:  /*** Stop DVD Disc ***/
+
+      /*** Stop DVD Disc ***/
+#ifdef HW_RVL
+      case 4:  
+#else
+      case 3:
+#endif
         dvd_motor_off();
         dvd_on = 0;
-        count = 3 + dvd_on;
-				menu = load_menu;
-				break;
+        menu = load_menu;
+        break;
+
+      /*** Load from FAT device ***/
+      default:
+        load_menu = menu;
+        size = FAT_Open(ret,hugorom);
+        if (size)
+        {
+          hugoromsize = size;
+          cart_reload = 1;
+          sprintf(rom_filename,"%s",filelist[selection].filename);
+          rom_filename[strlen(rom_filename) - 4] = 0;
+          return 1;
+        }
+        break;
     }
-	}
+  }
 
   menu = prevmenu;
   return 0;
@@ -427,65 +472,65 @@ int gamepaused = 0;
 
 void MainMenu()
 {
-	s8 ret;
-	u8 quit = 0;
+  s8 ret;
+  u8 quit = 0;
   menu = 0;
-	u8 count = 7;
-	char items[7][20] =
-	{
-		{"Play Game"},
-		{"Hard Reset"},
-		{"Load New Game"},
-		{"Emulator Options"},
-		{"WRAM Manager"},
-		{"Return to Loader"},
-		{"System Reboot"}
-	};
+  u8 count = 7;
+  char items[7][20] =
+  {
+    {"Play Game"},
+    {"Hard Reset"},
+    {"Load New Game"},
+    {"Emulator Options"},
+    {"WRAM Manager"},
+    {"Return to Loader"},
+    {"System Reboot"}
+  };
 
-	savetimer = timer_60;
-	gamepaused = 1;
+  savetimer = timer_60;
+  gamepaused = 1;
 
-	/* Switch to menu default rendering mode (60hz or 50hz, but always 480 lines) */
-	VIDEO_Configure (vmode);
-	VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], COLOR_BLACK);
-	VIDEO_Flush();
-	VIDEO_WaitVSync();
-	VIDEO_WaitVSync();
+  /* Switch to menu default rendering mode (60hz or 50hz, but always 480 lines) */
+  VIDEO_Configure (vmode);
+  VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], COLOR_BLACK);
+  VIDEO_Flush();
+  VIDEO_WaitVSync();
+  VIDEO_WaitVSync();
 
-	while (quit == 0)
-	{
-		ret = DoMenu (&items[0], count);
+  while (quit == 0)
+  {
+    ret = DoMenu (&items[0], count);
 
-		switch (ret)
-		{
-			case -1:
-			case  0:
-				if (hugoromsize) quit = 1;
-				break;
+    switch (ret)
+    {
+      case -1:
+      case  0:
+        if (hugoromsize) quit = 1;
+        break;
 
-			case 1:
-				if (!cart_reload && hugoromsize)
-				{
-					ResetPCE();
-					ResetSound();
-					savetimer = 0;
-					quit = 1;
-				}
-				break;
+      case 1:
+        if (!cart_reload && hugoromsize)
+        {
+          ResetPCE();
+          ResetSound();
+          savetimer = 0;
+          quit = 1;
+        }
+        break;
 
-			case 2:
+      case 2:
         quit = loadmenu();
-				break;	
+        break;  
 
-			case 3:
-				optionmenu();
-				break;
+      case 3:
+        optionmenu();
+        break;
 
-   			case 4 :
-				quit = wrammenu();
-				break;
+         case 4 :
+        quit = wrammenu();
+        break;
 
-			case 5: 
+      case 5: 
         VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], COLOR_BLACK);
         VIDEO_Flush();
         VIDEO_WaitVSync();
@@ -493,33 +538,33 @@ void MainMenu()
         DI_Close();
 #endif
         exit(0);
-				break;
+        break;
 
-			case 6:
+      case 6:
         VIDEO_ClearFrameBuffer(vmode, xfb[whichfb], COLOR_BLACK);
         VIDEO_Flush();
         VIDEO_WaitVSync();
 #ifdef HW_RVL
         DI_Close();
-				SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
+        SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
 #else
-				SYS_ResetSystem(SYS_HOTRESET,0,0);
+        SYS_ResetSystem(SYS_HOTRESET,0,0);
 #endif
-				break;
-		}
-	}
+        break;
+    }
+  }
 
-	/*** Remove any still held buttons ***/
-	while(PAD_ButtonsHeld(0)) PAD_ScanPads();
+  /*** Remove any still held buttons ***/
+  while(PAD_ButtonsHeld(0)) PAD_ScanPads();
 #ifdef HW_RVL
   while(WPAD_ButtonsHeld(0)) WPAD_ScanPads();
 #endif
 
-	/*** Reinitialize current TV mode ***/
+  /*** Reinitialize current TV mode ***/
   ogc_video__reset();
   
   gamepaused = 0;
-	timer_60 = savetimer;
+  timer_60 = savetimer;
   frameticker = 0;
 
 #ifndef HW_RVL

@@ -5,15 +5,9 @@
  *  
  ***************************************************************************/
 
-#include <hard_pce.h>
-#include <pce.h>
-#include <gccore.h>
-#include <ogcsys.h>
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include "hard_pce.h"
+#include "utils.h"
+#include "osd_ngc_machine.h"
 #include "font.h"
 
 #ifdef HW_RVL
@@ -25,7 +19,7 @@
 
 /* configurable keys */
 #define KEY_BUTTON_I      0
-#define KEY_BUTTON_II     1   
+#define KEY_BUTTON_II     1
 #define KEY_RUN           2
 #define KEY_SELECT        3
 #define KEY_AUTOFIRE_I    4
@@ -34,14 +28,14 @@
 #define MAX_KEYS          7
 
 /* Hu-Go keys */
-#define	JOY_A		    0x01
-#define	JOY_B		    0x02
-#define	JOY_SELECT	0x04
-#define	JOY_RUN	    0x08
-#define	JOY_UP		  0x10
-#define	JOY_RIGHT	  0x20
-#define	JOY_DOWN	  0x40
-#define	JOY_LEFT	  0x80
+#define  JOY_A      0x01
+#define  JOY_B      0x02
+#define  JOY_SELECT 0x04
+#define  JOY_RUN    0x08
+#define  JOY_UP     0x10
+#define  JOY_RIGHT  0x20
+#define  JOY_DOWN   0x40
+#define  JOY_LEFT   0x80
 
 /* gamepad default map (this can be reconfigured) */
 u16 pad_keymap[MAX_INPUTS][MAX_KEYS] =
@@ -148,10 +142,6 @@ static const char *keys_name[MAX_KEYS] =
 static int autofire[2] = { 0, 0 };
 static int autofireon = 0;
 
-extern void WaitPrompt(char *prompt);
-extern void ShowAction(char *prompt);
-extern void ShowScreen();
-extern void ClearScreen();
 extern void MainMenu();
 extern int Shutdown;
 
@@ -184,8 +174,8 @@ static void pad_config(int num)
 
     ClearScreen();
     sprintf(msg,"Press key for %s",keys_name[i]);
-    write_centre(254, msg);
-    ShowScreen();
+    WriteCentre(254, msg);
+    SetScreen();
 
     /* check buttons state */
     quit = 0;
@@ -212,7 +202,7 @@ static void pad_update()
 {
   int i;
   u16 p;
-	s8 x,y;
+  s8 x,y;
 
   /* update PAD status */
   PAD_ScanPads();
@@ -228,9 +218,6 @@ static void pad_update()
     if ((p & PAD_BUTTON_LEFT)  || (x < -60)) io.JOY[i] |= JOY_LEFT;
     else if ((p & PAD_BUTTON_RIGHT) || (x >  60)) io.JOY[i] |= JOY_RIGHT;
 
-    /* MENU */
-    if (p & pad_keymap[i][KEY_MENU]) MainMenu();
-
     /* BUTTONS */
     if (p & pad_keymap[i][KEY_BUTTON_I])   io.JOY[i]  |= JOY_A;
     if (p & pad_keymap[i][KEY_BUTTON_II])  io.JOY[i]  |= JOY_B;
@@ -238,13 +225,17 @@ static void pad_update()
     if (p & pad_keymap[i][KEY_RUN])        io.JOY[i]  |= JOY_RUN;
 
     /* AUTOFIRE */
-    if (p & pad_keymap[i][KEY_AUTOFIRE_I])   autofire[0] ^= 1;
-    if (p & pad_keymap[i][KEY_AUTOFIRE_II])  autofire[1] ^= 1;
+    if ((p & pad_keymap[i][KEY_AUTOFIRE_I])  && (p & pad_keymap[i][KEY_MENU]))  autofire[0] ^= 1;
+    if ((p & pad_keymap[i][KEY_AUTOFIRE_II]) && (p & pad_keymap[i][KEY_MENU]))  autofire[1] ^= 1;
     if (autofireon)
     {
       if (autofire[0]) io.JOY[i] |= JOY_A;
       if (autofire[1]) io.JOY[i] |= JOY_B;
     }
+
+    /* MENU */
+    if (p & pad_keymap[i][KEY_MENU]) MainMenu();
+
   }
 }
 
@@ -369,8 +360,8 @@ static void wpad_config(u8 pad)
     /* user information */
     ClearScreen();
     sprintf(msg,"Press key for %s",keys_name[i]);
-    write_centre(254, msg);
-    ShowScreen();
+    WriteCentre(254, msg);
+    SetScreen();
 
     /* wait for input */
     quit = 0;
@@ -426,10 +417,6 @@ static void wpad_update(void)
       /* retrieve current key mapping */
       u8 index = exp + (3 * i);
 
-      /* MENU */
-      if ((p & wpad_keymap[index][KEY_MENU]) || (p & WPAD_BUTTON_HOME))
-        MainMenu();
-
       /* BUTTONS */
       if (p & wpad_keymap[index][KEY_BUTTON_I])   io.JOY[i]  |= JOY_A;
       if (p & wpad_keymap[index][KEY_BUTTON_II])  io.JOY[i]  |= JOY_B;
@@ -437,13 +424,18 @@ static void wpad_update(void)
       if (p & wpad_keymap[index][KEY_RUN])        io.JOY[i]  |= JOY_RUN;
 
       /* AUTOFIRE */
-      if (p & wpad_keymap[index][KEY_AUTOFIRE_I])   autofire[0] ^= 1;
-      if (p & wpad_keymap[index][KEY_AUTOFIRE_II])  autofire[1] ^= 1;
+      if ((p & wpad_keymap[index][KEY_AUTOFIRE_I])  && (p & wpad_keymap[index][KEY_MENU]))  autofire[0] ^= 1;
+      if ((p & wpad_keymap[index][KEY_AUTOFIRE_II]) && (p & wpad_keymap[index][KEY_MENU]))  autofire[1] ^= 1;
       if (autofireon)
       {
         if (autofire[0]) io.JOY[i] |= JOY_A;
         if (autofire[1]) io.JOY[i] |= JOY_B;
       }
+
+      /* MENU */
+      if ((p & wpad_keymap[index][KEY_MENU]) || (p & WPAD_BUTTON_HOME))
+        MainMenu();
+
     }
   }
 }
@@ -453,15 +445,24 @@ static void wpad_update(void)
 /*****************************************************************
                 Generic input handlers 
 ******************************************************************/
+extern void credits();
+extern void pourlogo();
+extern void unpack();
+
 int osd_init_input()
 {
   PAD_Init ();
 #ifdef HW_RVL
   WPAD_Init();
-	WPAD_SetIdleTimeout(60);
+  WPAD_SetIdleTimeout(60);
   WPAD_SetDataFormat(WPAD_CHAN_ALL,WPAD_FMT_BTNS_ACC_IR);
   WPAD_SetVRes(WPAD_CHAN_ALL,640,480);
 #endif
+
+  /* Intro Screen */
+  unpack();
+  pourlogo();
+  credits();
 
   return 0;
 }
@@ -530,7 +531,7 @@ u16 ogc_input__getMenuButtons(void)
   s8 y  = PAD_StickY(0);
   if (x > 70) p |= PAD_BUTTON_RIGHT;
   else if (x < -70) p |= PAD_BUTTON_LEFT;
-	if (y > 60) p |= PAD_BUTTON_UP;
+  if (y > 60) p |= PAD_BUTTON_UP;
   else if (y < -60) p |= PAD_BUTTON_DOWN;
 
 #ifdef HW_RVL

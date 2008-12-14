@@ -1,14 +1,15 @@
 HUGOGC CHANGELOG:
 ---------------
 
-08/12/2008:
+14/12/2008:
 -----------
 [NGC/WII]
 - fixed I/II buttons being inverted with Wiimote
 - fixed Option Menu
 - removed embedded font, (re)enabled IPL font support: now should works for Qoob users too (thanks to emukiddid)
-- menu tweaks
-- compiled with libogc 1.7.0 
+- patched libfat for faster SDCARD accesses (thanks to svpe)
+- WRAM filenames are now based on the ROM filename (for FAT devices only)
+- various bugfixes, menu tweaks and code cleanup
 
 [NGC only]
 - added 480p support in menu
@@ -16,7 +17,9 @@ HUGOGC CHANGELOG:
 [Wii only]
 - implemented fast scrolling in menu using Wiimote D-PAD
 - added "Power" button support
-- libogc 1.7.0 features (SDHC support , Wiimote shutdown button support)
+- added USB Storage support
+- Widescreen menu fix
+- *new* libogc 1.7.0 features: SDHC support, Wiimote shutdown button support
 
 26/08/2008:
 -----------

@@ -1,13 +1,13 @@
 /****************************************************************************
- * Hu-Go! Nintendo Gamecube
+ * Hu-Go! Nintendo Gamecube/wii
  *
  * machine functions
  ****************************************************************************/
-#include <pce.h>
-#include <utils.h>
-#include <gccore.h>
-#include <ogcsys.h>
-#include <malloc.h>
+#include "pce.h"
+#include "osd_ngc_machine.h"
+#include "dvd.h"
+#include "history.h"
+
 #include <fat.h>
 
 char initial_path[PATH_MAX] = "";
@@ -35,14 +35,11 @@ UInt32 interrupt_60hz(UInt32, void*);
 
 extern void ogc_video__init(void);
 extern void dvd_drive_detect();
-extern void credits();
-extern void pourlogo();
-extern void unpack();
 extern void MainMenu();
 
 int hugoromsize;
 unsigned char *hugorom;
-
+bool fat_enabled = 0;
 int Shutdown = 0;
 
 #ifdef HW_RVL
@@ -65,13 +62,23 @@ int osd_init_machine(void)
   dvd_drive_detect();
 #endif
 
-  /* initialize LibFAT */
-  fatInitDefault();
+  /* Initialize FAT Interface */
+  if (fatInitDefault() == true)
+  {
+    fat_enabled = 1;
+#ifdef HW_RVL
+    fatEnableReadAhead ("sd", 6, 64);
+    fatEnableReadAhead ("usb", 6, 64);
+#else
+    fatEnableReadAhead ("carda", 6, 64);
+    fatEnableReadAhead ("cardb", 6, 64);
+#endif
+  }
 
-  /* Intro Screen */
-  unpack();
-  pourlogo();
-  credits();
+  /* Restore Recent Files list */
+  set_history_defaults();
+  history_load();
+
   
   if (!(XBuf = (UChar*)malloc(XBUF_WIDTH * XBUF_HEIGHT)))
   {

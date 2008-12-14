@@ -1,10 +1,9 @@
-/*****************************************************************************
- * font.c
- *
- *   IPL FONT Engine, based on Qoob MP3 Player Font
- *
- *   code by Softdev (2006), Eke-Eke(2007-2008)
+/*
+ * dvd.c
  * 
+ *   Low-level DVD access
+ *
+ *   code by Softdev (2006), Eke-Eke (2007,2008) 
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,15 +21,16 @@
  *
  ********************************************************************************/
 
-#ifndef _FONT_H
-#define _FONT_H
 
-extern void init_font(void);
-extern void WriteCentre_HL( int y, char *string);
-extern void WriteCentre (int y, char *text);
-extern void write_font (int x, int y, char *text);
-extern int fheight;
-extern int font_size[256];
-extern u16 back_framewidth;
+#ifndef _DVD_H_
+#define _DVD_H_
+
+extern u32 dvd_read (void *dst, u32 len, u64 offset);
+extern void dvd_motor_off ();
+
+#ifndef HW_RVL
+extern void uselessinquiry ();
+extern void dvd_drive_detect();
+#endif
 
 #endif
