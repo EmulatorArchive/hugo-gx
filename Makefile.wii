@@ -17,8 +17,8 @@ include $(DEVKITPPC)/wii_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	hugo_wii
 BUILD		:=	build_wii
-SOURCES		:=	source source/ngc source/ngc/gui
-INCLUDES	:=	source source/ngc source/ngc/gui
+SOURCES		:=	source source/ngc source/ngc/gui source/ngc/fileio
+INCLUDES	:=	source source/ngc source/ngc/gui source/ngc/fileio
 
 
 #---------------------------------------------------------------------------------

@@ -8,13 +8,7 @@
 #include "sys_gfx.h"
 #include "hard_pce.h"
 #include "gfx.h"
-
-#include <gccore.h>
-#include <ogcsys.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
+#include "osd_ngc_machine.h"
 
 //! PC Engine rendered screen
 unsigned char *screen = NULL;
@@ -289,7 +283,16 @@ void ogc_video__init(void)
   if (VIDEO_HaveComponentCable()) vmode = &TVNtsc480Prog;
 #endif
 
-/* set default rendering mode */
+#ifdef HW_RVL
+  /* Widescreen fix */
+  if( CONF_GetAspectRatio() )
+  {
+    vmode->viWidth    = 678;
+    vmode->viXOrigin  = (VI_MAX_WIDTH_NTSC - 678)/2;
+  }
+#endif
+
+  /* set default rendering mode */
   render = (vmode->viTVMode == VI_TVMODE_NTSC_PROG) ? 2 : 0;
    
   /* configure video mode */

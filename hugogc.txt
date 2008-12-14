@@ -19,13 +19,9 @@ experience all over again!
   * Completely Re-Written Sound Engine
   * 16-bit Stereo 32Khz Sound
   * Load ROMS up to 2.5Mb
-  * Battery RAM (WRAM) support (save & load)
-  * DVD ROM Loading
-  * SDCARD ROM Loading (with subdirectory support)
-  * Zipped Roms Support (Single ROM per archive)
+  * Battery RAM support for Memory Card, SD, USB storage (Wii only)
+  * Load ROM files from SD, USB Storage (Wii only) & ISO9660/Joliet DVD (with subdirectory support)
   * ISO/BIN support (no sound)
-  * Save & Load WRAM files to/from Memory Card & SDCARD
-  * Horizontal Resolutions up to 320
   * Wiimote/Nunchuk/Classic controller support (Wii only)
 
 --[ Installation ]-----------------------------------------------------------
@@ -39,18 +35,17 @@ http://modyawii.tehskeen.com/  (Booting Homebrew Section)
 using your prefered method (Twilight hack,...). This version provides extra features such as native SD 
 slot access and Wiimote support.
 
-SDCARD users should create a directory named "hugo" at the root of the SDCARD.
-Inside this directory, you have to create then a subdirectory named "roms" to put all your roms.
-You should also create a subdirectory named "saves" where SRAM and FreezeState files will be saved.
+FAT (SDCARD or USB) users should create a directory named "hugo" at the root of the device.
+Inside this directory, you can create a subdirectory named "roms" to put all your roms.
+a subdirectory named "saves" is automatically created when saving Battery RAM files.
 
-ROMS can also be loaded from a ISO9660 DVD. A modchip is required in gameCube mode.
+ROMS can also be loaded from a ISO9660/joliet DVD. A modchip is required in gameCube mode.
 On the Wii, no modchip is required but you will need to install the DI Stub before you can access DVD-/+R.
 More infos on HackMii: http://hackmii.com/2008/08/libdi-and-the-dvdx-installer/
 The maximal readable size is 1.35GB on Gamecube and 4.7GB on Wii (in GC compatible mode).
 
 
-IMPORTANT: When putting roms either on DVD or SDCARD, it is recommended to use subdirectories as there is 
-	   a limit of 1000 files per directory.
+IMPORTANT: When putting roms either on DVD or FAT devices, it is recommended to use subdirectories as there is a limit of 1000 files per directory.
 
 
 --[ Controls ]---------------------------------------------------------------
@@ -70,29 +65,29 @@ and mapped as follows:
 
   Button 1        PCE Button 1
   Button 2        PCE Button 2
-  Button A        PCE Turbo 1
-  Button B        PCE Turbo 2
+  Button A + Menu PCE Turbo 1
+  Button B + Menu PCE Turbo 2
   MINUS           PCE Select
   PLUS		  PCE Run
   HOME		  Menu
 
 When a Nunchuk is connected, the Wiimote is used vertically and mapped as follows:
 
-  Button A        PCE Button 1
-  Button B        PCE Button 2
-  Z Trigger       PCE Turbo 1
-  C Trigger       PCE Turbo 2
-  MINUS           PCE Select
-  PLUS		  PCE Run
-  HOME		  Menu
+  Button A         PCE Button 1
+  Button B         PCE Button 2
+  Z Trigger + Menu PCE Turbo 1
+  C Trigger + Menu PCE Turbo 1
+  MINUS            PCE Select
+  PLUS		   PCE Run
+  HOME		   Menu
 
 When a Classic Controller is connected, the Wiimote is not used and the controller is
 mapped as follows:
 
   Button A        PCE Button 1
   Button B        PCE Button 2
-  Button X        PCE Turbo 1
-  Button Y        PCE Turbo 2
+  Button X + Menu PCE Turbo 1
+  Button Y + Menu PCE Turbo 1
   MINUS           PCE Select
   PLUS		  PCE Run
   HOME		  Menu
@@ -124,10 +119,9 @@ mapped as follows:
   Load Recent let you browse a ROM history list with the ten last opened ROM files.
  This is only available for ROM files previously loaded from SDCARD.
 
-  Load from SDCARD  let you browse the SDCARD. 
-
+  Load from SD  let you browse the SDCARD. 
+  Load from USB let you browse the USB storage device. 
   Load from DVD let you browse the DVD. 
-
   Stop DVD Motor will stop the DVD motor and the disc from spinning during playtime
 
   Pressing B will make you going up one directory while navigating.
@@ -165,14 +159,14 @@ mapped as follows:
   You can now choose the device type and location.
   Be sure to set this according to your system configuration before saving/loading files.
 
-  . Device: Let you choose the device to use: SDCARD or MCARDA or MCARDB
+  . Device: Let you choose the device to use: FAT (SD or USB, automatic detection) OR Memory CARD (MCARDA or MCARDB)
 
    IMPORTANT:
    
    1/ when using NGC Memory Card in SLOTA, some mounting errors may occur. In this case,
       remove and insert the Memory Card again before trying to save/load anything.
 
-   2/ when using SDCARD, the directory /hugo/saves is automatically created
+   2/ when using FA devices, the directory /hugo/saves is automatically created
 
  
   RETURN TO LOADER:
@@ -217,7 +211,7 @@ DVD Magic         Ninjamod Team
 GX Engine         gc-linux team (http://www.gc-linux.org)
 libOGC            shagkur
 NGC porting code  softdev
-additional code	  eke-eke
+WII port + additional code eke-eke
 LibOGC		  shagkur & wintermute
 
 --[ Thanks ]-----------------------------------------------------------------

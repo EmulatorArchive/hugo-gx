@@ -1,10 +1,9 @@
-/*****************************************************************************
- * font.c
- *
- *   IPL FONT Engine, based on Qoob MP3 Player Font
- *
- *   code by Softdev (2006), Eke-Eke(2007-2008)
+/*
+ * file_fat.c
  * 
+ *   generic FAT loading support
+ *
+ *   code by Eke-Eke (2008) 
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,15 +21,19 @@
  *
  ********************************************************************************/
 
-#ifndef _FONT_H
-#define _FONT_H
+#ifndef _FILE_FAT_H
+#define _FILE_FAT_H
 
-extern void init_font(void);
-extern void WriteCentre_HL( int y, char *string);
-extern void WriteCentre (int y, char *text);
-extern void write_font (int x, int y, char *text);
-extern int fheight;
-extern int font_size[256];
-extern u16 back_framewidth;
+#define TYPE_RECENT   0
+#define TYPE_SD       1
+
+#ifdef HW_RVL
+#define TYPE_USB      2
+#endif
+
+extern int FAT_UpdateDir(int go_up);
+extern int FAT_ParseDirectory(void);
+extern int FAT_LoadFile(u8* buffer);
+extern int FAT_Open (int type, u8 *buffer);
 
 #endif

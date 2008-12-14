@@ -3,12 +3,11 @@
  *
  * Sound Functions
  ****************************************************************************/
-#include "cleantyp.h"
+#include "pce.h"
 #include "sys_snd.h"
 #include "sound.h"
+#include "osd_ngc_machine.h"
 #include "osd_ngc_mix.h"
-#include <gccore.h>
-#include <ogcsys.h>
 
 #define AUDIOBUFFER 2048
 

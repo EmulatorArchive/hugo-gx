@@ -11,9 +11,7 @@
  *
  * softdev December 2005
  *****************************************************************************/
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
+#include "osd_ngc_machine.h"
 #include "osd_ngc_mix.h"
 
 #define PSG_FREQ 3579545
@@ -33,9 +31,9 @@ unsigned int LFOShift = 0;
 unsigned int LFOFrequency = 0;
 unsigned int LFOControl = 0;
 unsigned int psgchannel = 0;
-int UserVolume = 0;			/*** This could be used as a volume control ***/
+int UserVolume = 0;      /*** This could be used as a volume control ***/
 #define DDATEMP 6
-int ddai[7][2048];			/*** Allow up to 2k sample reads ***/
+int ddai[7][2048];      /*** Allow up to 2k sample reads ***/
 
 /*** Support ***/
 int VolumeTable[92];
@@ -46,10 +44,10 @@ PSGCHANNEL psg[8];              /*** Six PSG channels ***/
 
 static inline int saturate(int val, int min, int max)
 {    
-	if (val < min)	val = min;
-	if (val > max)	val = max;
+  if (val < min)  val = min;
+  if (val > max)  val = max;
 
-	return val;
+  return val;
 }
 
 /****************************************************************************
@@ -57,11 +55,11 @@ static inline int saturate(int val, int min, int max)
  ****************************************************************************/
 void ResetSound()
 {
-	memset(&psg[0], 0, sizeof(PSGCHANNEL) * 6);
-	mainVolumeL = mainVolumeR = 0;
-	FMEnabled = 0;
-	LFOShift = LFOFrequency = LFOControl = 0;
-	psgchannel = 0;
+  memset(&psg[0], 0, sizeof(PSGCHANNEL) * 6);
+  mainVolumeL = mainVolumeR = 0;
+  FMEnabled = 0;
+  LFOShift = LFOFrequency = LFOControl = 0;
+  psgchannel = 0;
 }
 
 /****************************************************************************
@@ -118,14 +116,14 @@ void UpdateVolume( int channel )
  ****************************************************************************/
 void GenerateVolumeTable()
 {
-	int	i;
+  int  i;
 
-	for (i = 0; i <= 91; i++)
-	{
-		double v = (double)(91 - i);
-		VolumeTable[i] = (int)(32768.0 * pow(10.0, v * (-1.5) / 20.0));
-	}
-	
+  for (i = 0; i <= 91; i++)
+  {
+    double v = (double)(91 - i);
+    VolumeTable[i] = (int)(32768.0 * pow(10.0, v * (-1.5) / 20.0));
+  }
+  
 }
 
 /****************************************************************************
@@ -220,7 +218,7 @@ void processPSGEvent( int event, unsigned char data )
                   {                      
                        psg[psgchannel].ddadata[psg[psgchannel].ddaindex++] = (long)( data & 0x1f ) - 16;
                        psg[psgchannel].ddaindex &= 0x3ff;
-		       psg[psgchannel].ddabytecount++;
+           psg[psgchannel].ddabytecount++;
                   }
                   
                   break;
@@ -257,8 +255,8 @@ void processPSGEvent( int event, unsigned char data )
                   {
                        if ( psg[1].frequency && LFOFrequency )
                        {  
-			    psg[1].frequency *= LFOFrequency;
-			    UpdatePSGFrequency( psg[1].frequency, 1 );
+          psg[1].frequency *= LFOFrequency;
+          UpdatePSGFrequency( psg[1].frequency, 1 );
                        }
                        else
                        {
@@ -287,15 +285,15 @@ void processPSGEvent( int event, unsigned char data )
  ****************************************************************************/
 void DDASampleRate()
 {
-	int i;
+  int i;
 
-	for ( i = 0; i < 6; i++ )
-	{
-		if ( psg[i].ddabytecount ) {
-			psg[i].ddabytesperframe = psg[i].ddabytecount;
-			psg[i].ddabytecount = 0;
-		}
-	}
+  for ( i = 0; i < 6; i++ )
+  {
+    if ( psg[i].ddabytecount ) {
+      psg[i].ddabytesperframe = psg[i].ddabytecount;
+      psg[i].ddabytecount = 0;
+    }
+  }
 }
 
 /****************************************************************************
@@ -305,47 +303,47 @@ void DDASampleRate()
  ****************************************************************************/
 void interpolate( int channel, int samples )
 {
-	int i;
-	int osamples;
-	double xPos, interpolatefactor;
-	int chrate;
+  int i;
+  int osamples;
+  double xPos, interpolatefactor;
+  int chrate;
 
-	chrate = psg[channel].ddabytesperframe * 60;
+  chrate = psg[channel].ddabytesperframe * 60;
 
-	if ( chrate == 0 ) {
-		memset(&ddai[channel], 0, samples);
-		return;
-	}
+  if ( chrate == 0 ) {
+    memset(&ddai[channel], 0, samples);
+    return;
+  }
 
-	interpolatefactor = (double)hostSampleRate / (double) chrate;
-	osamples = psg[channel].ddabytesperframe;
+  interpolatefactor = (double)hostSampleRate / (double) chrate;
+  osamples = psg[channel].ddabytesperframe;
 
-	/*** Build the sample buffer ***/
-	for ( i = 0; i < osamples; i++ )
-	{
-		/*** Don't read more than I have ***/
-		if ( psg[channel].ddaphase != psg[channel].ddaindex )
-		{
-			ddai[DDATEMP][i] = psg[channel].ddadata[psg[channel].ddaphase];
-			/*
-			 * v0.0.1a
-			 * Be defensive - clear out as you take
-			 */
-			psg[channel].ddadata[psg[channel].ddaphase++] = 0;
-			psg[channel].ddaphase &= 0x3ff;
-		} else {
-			ddai[DDATEMP][i] = 0;
-		}
-	}	
+  /*** Build the sample buffer ***/
+  for ( i = 0; i < osamples; i++ )
+  {
+    /*** Don't read more than I have ***/
+    if ( psg[channel].ddaphase != psg[channel].ddaindex )
+    {
+      ddai[DDATEMP][i] = psg[channel].ddadata[psg[channel].ddaphase];
+      /*
+       * v0.0.1a
+       * Be defensive - clear out as you take
+       */
+      psg[channel].ddadata[psg[channel].ddaphase++] = 0;
+      psg[channel].ddaphase &= 0x3ff;
+    } else {
+      ddai[DDATEMP][i] = 0;
+    }
+  }  
 
-	/*** Now build and interpolate to new channel ***/
-	xPos = 0.0;
-	interpolatefactor = (double)chrate / (double)hostSampleRate;
-	for ( i = 0; i < samples; i++ )
-	{
-		ddai[channel][i] = ddai[DDATEMP][(int)xPos];
-		xPos += interpolatefactor;
-	}	
+  /*** Now build and interpolate to new channel ***/
+  xPos = 0.0;
+  interpolatefactor = (double)chrate / (double)hostSampleRate;
+  for ( i = 0; i < samples; i++ )
+  {
+    ddai[channel][i] = ddai[DDATEMP][(int)xPos];
+    xPos += interpolatefactor;
+  }  
 }
 
 /****************************************************************************
@@ -389,41 +387,41 @@ void MixStereoSound( short *dst, int samples )
              volumeR = psg[i].outVolumeR;
                           
              /*** Is there any Direct Data ***/
-	     if ( psg[i].ddaenabled )
-	     {
-		/*** DDA Data should be pushed into the current output stream 'as is'.
-		 *** However, for my purposes, I'm assuming an 8Khz DAC was used ***/
-		if ( dda[i] == 0 ) {
-			interpolate(i, samples);
-			dda[i] = 1;
-		}
+       if ( psg[i].ddaenabled )
+       {
+    /*** DDA Data should be pushed into the current output stream 'as is'.
+     *** However, for my purposes, I'm assuming an 8Khz DAC was used ***/
+    if ( dda[i] == 0 ) {
+      interpolate(i, samples);
+      dda[i] = 1;
+    }
 
-		sampleL = ddai[i][j];
-		tsampleL += ( sampleL * volumeL );
-		tsampleR += ( sampleL * volumeR );
-		continue;
+    sampleL = ddai[i][j];
+    tsampleL += ( sampleL * volumeL );
+    tsampleR += ( sampleL * volumeR );
+    continue;
 
-	     }   
+       }   
           
              /*** Noise ***/
-	     /*
+       /*
               * v0.0.1a - Check channel is valid
- 	      * This is due to Devil's Crush Enabling noise on CH 0
-	      */
+         * This is due to Devil's Crush Enabling noise on CH 0
+        */
              if ( psg[i].noiseenabled && ( i > 3 ))
              {
                 dp = psg[i].deltaNoise;
                 phase = psg[i].phase;
                   
-		sampleL  = NoiseTable[phase>>17];	phase += dp;
-		sampleL += NoiseTable[phase>>17];	phase += dp;
-		sampleL += NoiseTable[phase>>17];	phase += dp;
-		sampleL += NoiseTable[phase>>17];	phase += dp;
-		sampleL += NoiseTable[phase>>17];	phase += dp;
-		sampleL += NoiseTable[phase>>17];	phase += dp;
-		sampleL += NoiseTable[phase>>17];	phase += dp;
-		sampleL += NoiseTable[phase>>17];	phase += dp;
-		sampleL /= OVERSAMPLE;
+    sampleL  = NoiseTable[phase>>17];  phase += dp;
+    sampleL += NoiseTable[phase>>17];  phase += dp;
+    sampleL += NoiseTable[phase>>17];  phase += dp;
+    sampleL += NoiseTable[phase>>17];  phase += dp;
+    sampleL += NoiseTable[phase>>17];  phase += dp;
+    sampleL += NoiseTable[phase>>17];  phase += dp;
+    sampleL += NoiseTable[phase>>17];  phase += dp;
+    sampleL += NoiseTable[phase>>17];  phase += dp;
+    sampleL /= OVERSAMPLE;
                 
                 tsampleL += ( sampleL * volumeL );
                 tsampleR += ( sampleL * volumeR );
@@ -437,23 +435,23 @@ void MixStereoSound( short *dst, int samples )
                     {
                        lfo = psg[1].wavedata[(psg[1].deltaFreq * 8 ) >> 27] << LFOShift;
 
-		       /*** Paul Clifford's document states that the frequency is updated permanently ***/
-		       psg[0].frequency += lfo;
-		       UpdatePSGFrequency(psg[0].frequency, 0);
+           /*** Paul Clifford's document states that the frequency is updated permanently ***/
+           psg[0].frequency += lfo;
+           UpdatePSGFrequency(psg[0].frequency, 0);
 
-		       dp = psg[0].deltaFreq; 
+           dp = psg[0].deltaFreq; 
                        phase = psg[0].phase;
                        wave = &psg[0].wavedata[0];
                        
-		       sampleL  = wave[phase>>27];	phase += dp;
-		       sampleL += wave[phase>>27];	phase += dp;
-		       sampleL += wave[phase>>27];	phase += dp;
-		       sampleL += wave[phase>>27];	phase += dp;
-		       sampleL += wave[phase>>27];	phase += dp;
-		       sampleL += wave[phase>>27];	phase += dp;
-		       sampleL += wave[phase>>27];	phase += dp;
-		       sampleL += wave[phase>>27];	phase += dp;
-		       sampleL /= OVERSAMPLE;
+           sampleL  = wave[phase>>27];  phase += dp;
+           sampleL += wave[phase>>27];  phase += dp;
+           sampleL += wave[phase>>27];  phase += dp;
+           sampleL += wave[phase>>27];  phase += dp;
+           sampleL += wave[phase>>27];  phase += dp;
+           sampleL += wave[phase>>27];  phase += dp;
+           sampleL += wave[phase>>27];  phase += dp;
+           sampleL += wave[phase>>27];  phase += dp;
+           sampleL /= OVERSAMPLE;
                        
                        tsampleL += ( sampleL * volumeL );
                        tsampleR += ( sampleL * volumeR );
@@ -469,15 +467,15 @@ void MixStereoSound( short *dst, int samples )
                            phase = psg[i].phase;
                            wave = &psg[i].wavedata[0];
                            
-		           sampleL  = wave[phase>>27];	phase += dp;				           
-		           sampleL += wave[phase>>27];	phase += dp;
-		           sampleL += wave[phase>>27];	phase += dp;
-		           sampleL += wave[phase>>27];	phase += dp;
-		           sampleL += wave[phase>>27];	phase += dp;
-		           sampleL += wave[phase>>27];	phase += dp;
-		           sampleL += wave[phase>>27];	phase += dp;
-		           sampleL += wave[phase>>27];	phase += dp;
-		           sampleL /= OVERSAMPLE;	           
+               sampleL  = wave[phase>>27];  phase += dp;                   
+               sampleL += wave[phase>>27];  phase += dp;
+               sampleL += wave[phase>>27];  phase += dp;
+               sampleL += wave[phase>>27];  phase += dp;
+               sampleL += wave[phase>>27];  phase += dp;
+               sampleL += wave[phase>>27];  phase += dp;
+               sampleL += wave[phase>>27];  phase += dp;
+               sampleL += wave[phase>>27];  phase += dp;
+               sampleL /= OVERSAMPLE;             
 
                            tsampleL += ( sampleL * volumeL );
                            tsampleR += ( sampleL * volumeR );
@@ -524,8 +522,8 @@ void InitPSG( int samplerate )
       */
 
      memset(&psg, 0, sizeof(PSGCHANNEL) * 8);
-     UserVolume = 512; 	/*** This can be used as volume control on other platforms
-			     Range 0 - 512 ***/
+     UserVolume = 512;   /*** This can be used as volume control on other platforms
+           Range 0 - 512 ***/
      
 }
 

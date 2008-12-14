@@ -1,17 +1,16 @@
-/***************************************************************************
- *   SDCARD/MEMCARD File support
+/*
+ *  osd_ngc_state.c
  *
+ *  FAT and Memory Card Savestate files managment
  *
  ***************************************************************************/
-#include <gccore.h>
-#include <ogcsys.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fat.h>
-#include <sys/dir.h>
 
+#include "pce.h"
+#include "osd_ngc_machine.h"
+#include "font.h"
 #include "saveicon.h"
+#include "filesel.h"
+
 #ifndef HW_RVL
 #include "dvd.h"
 #endif
@@ -33,12 +32,10 @@ static card_stat CardStatus;
  * 64k SRAM + 2k Icon
  */
 static u8 savebuffer[SAVESIZE] ATTRIBUTE_ALIGN (32);
+char rom_filename[MAXJOLIET];
 
-extern void WaitPrompt( char *prompt );
-extern void ShowAction( char *text );
 extern unsigned long ROMCRC32;
 extern unsigned char *WRAM;
-extern void ResetPCE();
 extern void ResetSound();
 extern unsigned int savetimer;
 
@@ -50,52 +47,56 @@ extern unsigned int savetimer;
  * We use the same buffer as for Memory Card manager
  * Function returns TRUE on success.
  *****************************************************************************/
-int SD_ManageFile(char *filename, int direction)
+static int FAT_ManageFile(char *filename, int direction)
 {
-  char pathname[256];
+  char pathname[MAXPATHLEN];
   int done = 0;
   int filesize;
-	
+  
+  if (!fat_enabled) return 0;
+
   /* first check if directory exist */
-  DIR_ITER *dir = diropen("/hugo/saves");
-  if (dir == NULL) mkdir("/hugo/saves",S_IRWXU);
+  sprintf (pathname, "%s/saves", DEFAULT_PATH);
+
+  DIR_ITER *dir = diropen(pathname);
+  if (dir == NULL) mkdir(pathname,S_IRWXU);
   else dirclose(dir);
 
   /* build complete SDCARD filename */
-  sprintf (pathname, "/hugo/saves/%s",filename);
+  sprintf (pathname, "%s/%s", pathname, filename);
 
   /* open file */
   FILE *fp = fopen(pathname, direction ? "rb" : "wb");
   if (fp == NULL)
-	{
-    sprintf (filename, "Error opening %s", pathname);
-		WaitPrompt(filename);
-		return 0;
-	}
-	
-	switch (direction)
   {
-		case 0: /* SAVING */
+    sprintf (filename, "Error opening %s", pathname);
+    WaitPrompt(filename);
+    return 0;
+  }
+  
+  switch (direction)
+  {
+    case 0: /* SAVING */
 
       memcpy (&savebuffer[0], WRAM, 0x2000);
-			filesize = 0x2000;
+      filesize = 0x2000;
 
       /* write buffer */
       done = fwrite(savebuffer, 1, filesize, fp);
       if (done < filesize)
       {
         sprintf (filename, "Error writing %s", pathname);
-				WaitPrompt (filename);
-				return 0;
-			}
+        WaitPrompt (filename);
+        return 0;
+      }
 
       fclose(fp);
       sprintf (filename, "Saved %d bytes successfully", done);
-			WaitPrompt (filename);
-			return 1;
-		
-		case 1: /* LOADING */
-		
+      WaitPrompt (filename);
+      return 1;
+    
+    case 1: /* LOADING */
+    
       /* read size */
       fseek(fp , 0 , SEEK_END);
       filesize = ftell (fp);
@@ -106,22 +107,22 @@ int SD_ManageFile(char *filename, int direction)
       if (done < filesize)
       {
         sprintf (filename, "Error reading %s", pathname);
-		    WaitPrompt(filename);
-		    return 0;
+        WaitPrompt(filename);
+        return 0;
       }
       fclose(fp);
 
-			memcpy (WRAM, &savebuffer[0], 0x2000);
-			ResetPCE();
-			ResetSound();
-			savetimer = 0;
+      memcpy (WRAM, &savebuffer[0], 0x2000);
+      ResetPCE();
+      ResetSound();
+      savetimer = 0;
             
-			sprintf (filename, "Loaded %d bytes successfully", done);
-			WaitPrompt (filename);
-			return 1;
-	}
-	
-	return 0; 
+      sprintf (filename, "Loaded %d bytes successfully", done);
+      WaitPrompt (filename);
+      return 1;
+  }
+  
+  return 0; 
 }
 
 /****************************************************************************
@@ -135,8 +136,8 @@ int SD_ManageFile(char *filename, int direction)
  *****************************************************************************/
 int MountTheCard (u8 slot)
 {
-	int tries = 0;
-	int CardError;
+  int tries = 0;
+  int CardError;
   *(unsigned long *) (0xcc006800) |= 1 << 13; /*** Disable Encryption ***/
 #ifndef HW_RVL
   uselessinquiry ();
@@ -148,8 +149,8 @@ int MountTheCard (u8 slot)
     if (CardError == 0) return 1;
     else EXI_ProbeReset ();
     tries++;
-	}
-	return 0;
+  }
+  return 0;
 }
 
 /****************************************************************************
@@ -160,13 +161,13 @@ int MountTheCard (u8 slot)
  ****************************************************************************/
 int CardFileExists (char *filename, u8 slot)
 {
-	int CardError = CARD_FindFirst (slot, &CardDir, TRUE);
-	while (CardError != CARD_ERROR_NOFILE)
-	{
-		CardError = CARD_FindNext (&CardDir);
-		if (strcmp ((char *) CardDir.filename, filename) == 0) return 1;
-	}
-	return 0;
+  int CardError = CARD_FindFirst (slot, &CardDir, TRUE);
+  while (CardError != CARD_ERROR_NOFILE)
+  {
+    CardError = CARD_FindNext (&CardDir);
+    if (strcmp ((char *) CardDir.filename, filename) == 0) return 1;
+  }
+  return 0;
 }
 
 /****************************************************************************
@@ -181,164 +182,185 @@ int CardFileExists (char *filename, u8 slot)
  * direction == 0 save, 1 load.
  ****************************************************************************/
 extern int hugoromsize;
-extern unsigned char cart_reload;
 
 int ManageWRAM (u8 direction, u8 device)
 {
-	char savefilename[128];
-	int CardError;
-	u32 SectorSize;
-	char comment[2][32] = { "Hu-Go! 2.12 GC 0.0.2", "ANY GAME" };
-  int outbytes = 0;
-	int filesize;
-	int offset;
-	
-	if (cart_reload || !hugoromsize) return 0;
+  if (cart_reload || !hugoromsize) return 0;
+ 
+  char filename[128];
  
   /* clean buffer */
   memset(savebuffer, 0, SAVESIZE);
 
-	if (direction) ShowAction ("Saving WRAM ...");
-	else ShowAction ("Loading WRAM ...");
+  if (direction) ShowAction ("Saving WRAM ...");
+  else ShowAction ("Loading WRAM ...");
 
-	/*** Make savefilename ***/
-	sprintf(savefilename, "%08lX.hgo", ROMCRC32);
-	sprintf(comment[1], "CRC : %08lX", ROMCRC32);
+  if (device == 0)
+  {
+    /* FAT support */
+    sprintf (filename, "%s.hgo", rom_filename);
+    return FAT_ManageFile(filename,direction);
+  }
 
-	/* device is SDCARD, let's go */
-	if (device == 0) return SD_ManageFile(savefilename,direction);
+  /* Memory CARD support */
+  char action[80];
+  int CardError;
+  unsigned int SectorSize;
+  int blocks;
+  char comment[2][32] = { {"Hu-go! 2.12 [WRAM]"}, {"ANY GAME"} };
+  int outbytes = 0;
+  int sbo;
+  int state_size = 0;
 
+  /* First, build a filename */
+  sprintf(filename, "%08lX.hgo", ROMCRC32);
+  sprintf(comment[1], "CRC : %08lX", ROMCRC32);
+
+  /* set MCARD slot nr. */
   u8 CARDSLOT = device - 1;
 
-	/****** device is MCARD, we continue *****/
-	/*** Initialise the memcard ***/
-	memset(&SysArea, 0, CARD_WORKAREA);
-	CARD_Init("HUGO","00");
+  /* Saving */
+  if (direction == 0)
+  {
+    /* Build the output buffer */
+    memcpy (&savebuffer, &icon, 2048);
+    memcpy (&savebuffer[2048], &comment[0], 64);
+    state_size = 0x2000;
+  }
 
-	/*** Try to mount the card ***/
-	CardError = MountTheCard(CARDSLOT);
-	
-	if (!CardError)
-	{
-		/*** Signal Failure ***/
-		WaitPrompt("Unable to mount memory card");
-		return 0;
-	}
-	CardError = CARD_GetSectorSize(CARDSLOT, &SectorSize);
+  outbytes = 2048 + 64 + state_size;
 
-	if (direction)	/*** Save ***/
-	{
-		/*** Setup savebuffer ***/
-		memset(&savebuffer, 0, SAVESIZE);
-		memcpy(&savebuffer, &saveicon, sizeof(saveicon));
+  /*** Initialise the CARD system ***/
+  memset(&SysArea, 0, CARD_WORKAREA);
+  CARD_Init("HUGO","00");
 
-		/*** Update the save buffer ***/
-		memcpy(&savebuffer[sizeof(saveicon)], &comment[0], 64);
-		outbytes = sizeof(saveicon) + 64;
+  /*** Attempt to mount the card ***/
+  CardError = MountTheCard(CARDSLOT);
 
-		/*** Copy battery ram ***/
-		memcpy(&savebuffer[outbytes], WRAM, 0x2000);
-		outbytes += 0x2000;
+  if (CardError)
+  {
+    /*** Retrieve the sector size ***/
+  CardError = CARD_GetSectorSize(CARDSLOT, &SectorSize);
 
-		filesize = (outbytes / SectorSize) * SectorSize;
-		if (outbytes % SectorSize) filesize += SectorSize;
+    switch (direction)
+    {
+      case 0: /*** Saving ***/
+        /*** Determine number of blocks on this card ***/
+        blocks = (outbytes / SectorSize) * SectorSize;
+        if (outbytes % SectorSize) blocks += SectorSize;
 
-		/*** Determine if this is a simple open, or new save ***/
-		if (CardFileExists(savefilename, CARDSLOT))
-		{
-			/*** Open existing save handle ***/
-			CardError = CARD_Open(CARDSLOT, savefilename, &CardFile);
+        /*** Check if a previous save exists ***/
+        if (CardFileExists (filename,CARDSLOT))
+        {
+          CardError = CARD_Open (CARDSLOT, filename, &CardFile);
+          if (CardError)
+          {
+            sprintf (action, "Error Open : %d", CardError);
+            WaitPrompt (action);
+            CARD_Unmount (CARDSLOT);
+            return 0;
+          }
 
-			if (CardError)
-			{
-				WaitPrompt("Unable to open save");
-				CARD_Unmount (CARDSLOT);
-				return 0;
-			}
-		}
-		else
-		{
-			/*** Create new save file ***/
-			CardError = CARD_Create(CARDSLOT, savefilename, filesize, &CardFile);
-			if (CardError)
-			{
-				WaitPrompt("Unable to create save");
-				CARD_Unmount (CARDSLOT);
-				return 0;
-			}
-		}
+          int size = CardFile.len;
+          CARD_Close (&CardFile);
 
-		/*** Now fill in the status ***/
-		CARD_GetStatus(CARDSLOT, CardFile.filenum, &CardStatus);
-		CardStatus.icon_addr = 0;
-		CardStatus.icon_fmt = 2;
-		CardStatus.icon_speed = 1;
-		CardStatus.comment_addr = sizeof(saveicon);
-		CARD_SetStatus(CARDSLOT, CardFile.filenum, &CardStatus);
+          if (size < blocks)
+          {
+            /* new size is bigger: check if there is enough space left */
+            CardError = CARD_Create (CARDSLOT, "TEMP", blocks-size, &CardFile);
+            if (CardError)
+            {
+              sprintf (action, "Error Update : %d", CardError);
+              WaitPrompt (action);
+              CARD_Unmount (CARDSLOT);
+              return 0;
+            }
+            CARD_Close (&CardFile);
+            CARD_Delete(CARDSLOT, "TEMP");
+          }
 
-		/*** And write the file out ***/
-		offset = 0;
-		while ( outbytes > 0 )
-		{
-			CardError = CARD_Write(&CardFile, &savebuffer[offset], SectorSize, offset);
-			outbytes -= SectorSize;
-			offset += SectorSize;
-		}		
+          /* always delete existing slot */
+          CARD_Delete(CARDSLOT, filename);
+        }
 
-		CARD_Close(&CardFile);
-		CARD_Unmount(CARDSLOT);
-		sprintf(savefilename, "Saved %d bytes successfully", offset);
-		WaitPrompt(savefilename);
-	}
-	else
-	{	/*** Load ***/
-		/*** Check for file ***/
-		if (CardFileExists(savefilename, CARDSLOT))
-		{
-			memset(&CardFile, 0, sizeof(CardFile));
-			CardError = CARD_Open( CARDSLOT, savefilename, &CardFile );
-			if (CardError)
-			{
-				WaitPrompt("Unable to open save");
-				CARD_Unmount (CARDSLOT);
-				return 0;
-			}
+        /*** Create a new slot ***/
+        CardError = CARD_Create (CARDSLOT, filename, blocks, &CardFile);
+        if (CardError)
+        {
+          sprintf (action, "Error create : %d %d", CardError, CARDSLOT);
+          WaitPrompt (action);
+          CARD_Unmount (CARDSLOT);
+          return 0;
+        }
 
-			sprintf(savefilename, "Filesize %d", CardFile.len);
-			WaitPrompt(savefilename);
+        /*** Continue and save ***/
+      CARD_GetStatus(CARDSLOT, CardFile.filenum, &CardStatus);
+      CardStatus.icon_addr = 0x0;
+      CardStatus.icon_fmt = 2;
+      CardStatus.icon_speed = 1;
+      CardStatus.comment_addr = 2048;
+      CARD_SetStatus(CARDSLOT, CardFile.filenum, &CardStatus);
 
-			if (CardFile.len != SAVESIZE)
-			{
-				WaitPrompt("Save is corrupt!");
-				CARD_Unmount (CARDSLOT);
-				return 0;
-			}
+        /*** And write the blocks out ***/
+        sbo = 0;
+      while ( outbytes > 0 )
+      {
+          CardError = CARD_Write (&CardFile, &savebuffer[sbo], SectorSize, sbo);
+          outbytes -= SectorSize;
+          sbo += SectorSize;
+      }    
 
-			filesize = CardFile.len;
-			offset = 0;
-			while (filesize > 0)
-			{
-				CardError = CARD_Read( &CardFile, &savebuffer[offset], SectorSize, offset );
-				filesize -= SectorSize;
-				offset += SectorSize;
-			}
+      CARD_Close(&CardFile);
+      CARD_Unmount(CARDSLOT);
+        sprintf (action, "Saved %d bytes successfully", blocks);
+        WaitPrompt (action);
+        return 1;
 
-			CARD_Close(&CardFile);
-			CARD_Unmount(CARDSLOT);
-	
-			memcpy(WRAM, &savebuffer[sizeof(saveicon)+64], 0x2000);
-			ResetPCE();
-			ResetSound();
-			savetimer = 0;
-	
-			WaitPrompt("Save successfully loaded");
-		}
-		else
-		{   /*** No File ***/
-			WaitPrompt("No save found!");
-			return 0;
-		}
-	}
+    default: /*** Loading ***/
+      if (!CardFileExists (filename, CARDSLOT))
+      {
+        WaitPrompt ("No Save File Found");
+        CARD_Unmount (CARDSLOT);
+        return 0;
+      }
 
-	return 1;
+      memset (&CardFile, 0, sizeof (CardFile));
+      CardError = CARD_Open (CARDSLOT, filename, &CardFile);
+      if (CardError)
+      {
+        sprintf (action, "Error Open : %d", CardError);
+        WaitPrompt (action);
+        CARD_Unmount (CARDSLOT);
+        return 0;
+      }
+
+      blocks = CardFile.len;
+      if (blocks < SectorSize) blocks = SectorSize;
+      if (blocks % SectorSize) blocks++;
+
+      /*** Just read the file back in ***/
+      sbo = 0;
+      int size = blocks;
+      while (blocks > 0)
+      {
+        CARD_Read (&CardFile, &savebuffer[sbo], SectorSize, sbo);
+        sbo += SectorSize;
+        blocks -= SectorSize;
+      }
+      CARD_Close(&CardFile);
+      CARD_Unmount(CARDSLOT);
+  
+      memcpy(WRAM, &savebuffer[2112], 0x2000);
+      ResetPCE();
+      ResetSound();
+      savetimer = 0;
+
+      /*** Inform user ***/
+      sprintf (action, "Loaded %d bytes successfully", size);
+      WaitPrompt (action);
+    return 1;
+    }
+  }
+  else WaitPrompt ("Unable to mount memory card");
+  return 0; /*** Signal failure ***/
 }

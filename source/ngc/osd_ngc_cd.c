@@ -6,8 +6,6 @@
  * As the Nintendo Gamecube can't read CDs these are simply placeholder 
  * dummy functions.
  ****************************************************************************/
-#include "pce.h"
-#include "utils.h"
 #include "hard_pce.h"
 
 int cd_drive_handle = 0;
