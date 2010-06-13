@@ -10,11 +10,17 @@
 #include "file_fat.h"
 #include "dvd.h"
 
+#include <network.h>
 #include <zlib.h>
 
+
 #ifdef HW_RVL
+#include "preferences.h"
 #include <wiiuse/wpad.h>
 #include <di/di.h>
+#include <smb.h>
+
+struct SHugoSettings HugoSettings;
 #endif
 
 extern unsigned int *xfb[2];
@@ -24,11 +30,18 @@ extern int copynow;
 extern void ogc_video__reset();
 extern void ResetSound();
 extern int hugoromsize;
+int networkInit;
 unsigned int savetimer;
-
 unsigned int *backdrop;
 unsigned int backcolour;
 char version[] = { "Version 2.12" };
+
+
+int smbmenu();
+
+
+
+	
 
 /****************************************************************************
  * Unpack Background
@@ -38,7 +51,8 @@ void unpack()
   unsigned long res, inbytes, outbytes;
   int *temp;
   int h,w,v;
-
+  
+	
   inbytes = hugologo_COMPRESSED;
   outbytes = hugologo_RAW;
 
@@ -99,7 +113,7 @@ void WaitButtonA ()
   while (!(p & PAD_BUTTON_A)) p = ogc_input__getMenuButtons();
 }
 
-void WaitPrompt (char *msg)
+extern void WaitPrompt (char *msg)
 {
   if (SILENT) return;
   ClearScreen();
@@ -109,7 +123,7 @@ void WaitPrompt (char *msg)
   WaitButtonA ();
 }
 
-void ShowAction (char *msg)
+extern void ShowAction (char *msg)
 {
   if (SILENT) return;
 
@@ -164,6 +178,9 @@ void pourlogo()
  ****************************************************************************/
 void credits()
 {
+#ifdef HW_RVL
+  load_settings();
+#endif
   int p = 220 + ( fheight << 1);
   copybackdrop();
   WriteCentre(p, "Hu-Go! - Zeograd http://www.zeograd.com");
@@ -199,7 +216,6 @@ void DrawMenu( char items[][20], int maxitems, int selected )
     else WriteCentre( p, items[i] );
     p += fheight;
   }
-
   SetScreen();
 }
 
@@ -320,9 +336,16 @@ int optionmenu ()
   int prevmenu = menu;
   int quit = 0;
   int ret;
-  int count = 3;
+  int count;
+#ifdef HW_RVL  
+  char items[4][20];
+  count = 4;
+#else
   char items[3][20];
-
+  count = 3;
+#endif
+  //}
+  
   menu = 0;
 
   while (quit == 0)
@@ -331,13 +354,25 @@ int optionmenu ()
     if (render == 1) sprintf (items[1], "Render: INTERLACED");
     else if (render == 2) sprintf (items[1], "Render: PROGRESSIVE");
     else sprintf (items[1], "Render: ORIGINAL");
-    sprintf (items[2],"Return to previous");
+#ifdef HW_RVL  
+    sprintf (items[2],"SMB Settings");
+	sprintf (items[3],"Return to previous");
+#else
+	sprintf (items[2],"Return to previous");
+#endif
 
     ret = DoMenu (&items[0], count);
     switch (ret)
     {
+
+#ifndef HW_RVL  
+	  case 2:
+#else
+	  case 2:
+		smbmenu();
+#endif
       case -1:
-      case 2:
+	  case 3:
         quit = 1;
         break;
 
@@ -356,14 +391,96 @@ int optionmenu ()
           }
         }
         break;
+
     }
   }
 
   menu = prevmenu;
   return 0;
 }
-      
 
+/****************************************************************************
+ * SMB Settings Menu
+ ****************************************************************************/
+#ifdef HW_RVL
+
+void initNetwork()
+{
+	ShowAction("initializing network...");
+	while (net_init() == -EAGAIN);
+	char myIP[16];
+
+	if (if_config(myIP, NULL, NULL, true) < 0) 
+	{
+		WaitPrompt("failed to init network interface\n");
+		exit(EXIT_FAILURE);
+	}
+	else
+	{
+		networkInit = 1;
+		if ((strlen(HugoSettings.share)) > 0 && (strlen(HugoSettings.ip) > 0))
+		{
+			if (!smbInit(HugoSettings.user, HugoSettings.pwd, HugoSettings.share, HugoSettings.ip)) 
+			{
+				printf("failed to connect to SMB share\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+		else
+			WaitPrompt("Wrong Parameters - Check your Settings.xml");
+	}
+	
+}
+
+void closeNetwork()
+{
+	if(networkInit)
+		smbClose("smb");
+	networkInit = false;
+	
+} 
+
+ 
+int smbmenu ()
+{
+  int prevmenu = menu;
+  int quit = 0;
+  int ret;
+  int count = 5;
+  char items[5][20];
+
+  menu = 1;
+
+  while (quit == 0)
+  {
+    sprintf (items[0], "IP: %s", HugoSettings.ip);
+    sprintf (items[1], "Share: %s", HugoSettings.share);
+	sprintf (items[2], "Username: %s", HugoSettings.user);
+    sprintf (items[3], "Password: %s", HugoSettings.pwd);	
+	sprintf (items[4],"Return to previous");
+
+
+    ret = DoMenu (&items[0], count);
+    switch (ret)
+    {
+      case -1:
+	  case 4:
+	    quit = 1;
+        break;
+
+      case 0:
+	  // open OnScreenKeyboard for user Settings in future versions...
+      case 1:
+	  case 2:
+	  case 3:	  
+        break;
+
+    }
+  }
+  menu = prevmenu;
+  return 0;
+}
+#endif
 /****************************************************************************
  * Load Rom menu
  *
@@ -374,25 +491,27 @@ extern char rom_filename[MAXJOLIET];
 static u8 load_menu = 0;
 static u8 dvd_on = 0;
 
+
 int loadmenu ()
 {
   int prevmenu = menu;
   int ret,count,size;
   int quit = 0;
 #ifdef HW_RVL
-  char item[5][20] = {
+  char item[6][20] = {
     {"Load Recent"},
     {"Load from SD"},
     {"Load from USB"},
     {"Load from DVD"},
+	{"Load from SMB"},
     {"Stop DVD Motor"}
   };
 #else
-  char item[4][20] = {
+  char item[5][20] = {
     {"Load Recent"},
     {"Load from SD"},
     {"Load from DVD"},
-    {"Stop DVD Motor"}
+    {"Stop DVD Motor"}	
   };
 #endif
 
@@ -401,7 +520,7 @@ int loadmenu ()
   while (quit == 0)
   {
 #ifdef HW_RVL
-    count = 4 + dvd_on;
+    count = 5 + dvd_on;
 #else
     count = 3 + dvd_on;
 #endif
@@ -415,7 +534,26 @@ int loadmenu ()
 
       /*** Load from DVD ***/
 #ifdef HW_RVL
-      case 3:
+      
+
+      /*** Load from SMB Share ***/
+	  case 4:
+		if (!networkInit)
+			initNetwork();
+			
+	    load_menu = menu;
+        size = FAT_Open(ret,hugorom);
+        if (size)
+        {
+		   hugoromsize = size;
+		   cart_reload = 1;
+		   sprintf(rom_filename,"%s",filelist[selection].filename);
+		   rom_filename[strlen(rom_filename) - 4] = 0;
+		   return 1;
+        }
+        break;
+	  
+	  case 3:
 #else
       case 2:
 #endif
@@ -434,7 +572,7 @@ int loadmenu ()
 
       /*** Stop DVD Disc ***/
 #ifdef HW_RVL
-      case 4:  
+      case 5:  
 #else
       case 3:
 #endif
@@ -488,7 +626,7 @@ void MainMenu()
   };
 
   savetimer = timer_60;
-  gamepaused = 1;
+  gamepaused = 1; 
 
   /* Switch to menu default rendering mode (60hz or 50hz, but always 480 lines) */
   VIDEO_Configure (vmode);

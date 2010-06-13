@@ -19,7 +19,7 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- ********************************************************************************/
+ ******f**************************************************************************/
 
 #ifndef _FILE_FAT_H
 #define _FILE_FAT_H
@@ -29,6 +29,7 @@
 
 #ifdef HW_RVL
 #define TYPE_USB      2
+#define TYPE_SMB      4
 #endif
 
 extern int FAT_UpdateDir(int go_up);
