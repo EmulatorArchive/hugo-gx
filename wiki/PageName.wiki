@@ -167,7 +167,11 @@ mapped as follows:
         
 	.PROGRESS swith the rendering to Progressive Video Mode (480p), 
 	only set when component cable is detected.
-
+  
+  SMB Settings shows your current Settings from hugo/hugo.xml
+        In upcoming versions, you'll be able to enter values directly from the GUI, using
+        an OnScreen Keyboard. 
+ 
 
   WRAM MANAGER:
   -----------------------------------------------------
