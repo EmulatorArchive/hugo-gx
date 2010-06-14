@@ -1,4 +1,4 @@
-
+#labels Featured
 	    Core-GraphX / PC Engine / Turbo GraphX Emulator
 
 
@@ -22,6 +22,7 @@ experience all over again!
   * Save & Load WRAM files to/from Memory Card & SDCARD
   * Horizontal Resolutions up to 320
   * Wiimote/Nunchuk/Classic controller support (Wii only)
+  * SMB Support
 
 --[ Installation ]-----------------------------------------------------------
 
@@ -48,6 +49,23 @@ and 4.7GB for Wii users.
 IMPORTANT: When putting roms either on DVD or SDCARD, it is recommended to use subdirectories as there is 
 	   a limit of 1000 files per directory.
 
+--[ SMB Settings ]-----------------------------------------------------------
+
+If you want to use SMB, open hugo/hugo.xml and look for these Lines:
+
+<setting name="ip" value="" description="Share Computer IP" />
+<setting name="share" value="" description="Share Name" />
+<setting name="user" value="" description="Share Username" />
+<setting name="pwd" value="" description="Share Password" />
+
+Enter your Configuration data in the value="" Field.
+
+E.g like this:
+
+<setting name="ip" value="192.168.0.1" description="Share Computer IP" />
+<setting name="share" value="PCEngine" description="Share Name" />
+<setting name="user" value="wii" description="Share Username" />
+<setting name="pwd" value="wii" description="Share Password" />
 
 --[ Controls ]---------------------------------------------------------------
 
