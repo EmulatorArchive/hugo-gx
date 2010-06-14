@@ -170,7 +170,7 @@ mapped as follows:
   
   SMB Settings shows your current Settings from hugo/hugo.xml
         In upcoming versions, you'll be able to enter values directly from the GUI, using
-        an OnScreen Keyboard. 
+        an OnScreen Keyboard. Currently you're only able to check your SMB Settings.
  
 
   WRAM MANAGER:
